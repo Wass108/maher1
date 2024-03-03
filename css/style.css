@@ -905,14 +905,15 @@ ol {
 .projects-slider .single-project {
 	height: 550px;
 	width: 100%;
-	background: #333;
+	/* background: #333; */
 	-o-transition: .8s;
 	transition: .8s;
 	-webkit-transition: .8s;
 	-ms-transform: translateX(0);
-	    transform: translateX(0);
+	transform: translateX(0);
 	-webkit-transform: translateX(0);
 	opacity: 1;
+	background-position: bottom;
 }
 
 .projects-slider .single-project .project-content {
@@ -1057,7 +1058,7 @@ ol {
 
 .footer-section .copyright {
 	position: absolute;
-	top: 50%;
+	/*top: 50%;*/
 	margin-top: -12px;
 	left: 60px;
 	color: #737373;
@@ -1077,12 +1078,13 @@ ol {
 	list-style: none;
 }
 
-.footer-item ul li {
+.footer-item {
 	display: block;
 	margin-bottom: 10px;
+	padding-left: 20%;
 }
 
-.footer-item ul li a {
+.footer-item  a {
 	display: inline-block;
 	font-size: 15px;
 	font-weight: 500;
@@ -1090,7 +1092,7 @@ ol {
 	padding: 0 5px;
 }
 
-.footer-item ul li a:hover {
+.footer-item  a:hover {
 	background: #baff00;
 }
 
@@ -2065,6 +2067,7 @@ ol {
 	}
 	.footer-item {
 		margin-bottom: 40px;
+		margin-right: 80px;
 	}
 }
 
@@ -2109,5 +2112,10 @@ ol {
 	}
 	.projects-slider {
 		padding: 0 15px;
+	}
+	.footer-item {
+		margin-bottom: 40px;
+		margin-left:   50px;
+	
 	}
 }
