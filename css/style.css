@@ -1034,7 +1034,7 @@ ol {
 }
 
 .client-slider .single-brand a img {
-	width: auto;
+	width: 60%;
 	margin: 0 auto;
 	opacity: 0.2;
 	-webkit-transition: all 0.4s;
