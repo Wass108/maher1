@@ -176,7 +176,7 @@
 				<div class="project-content">
 					<h2>Atlantica<br> Hotel</h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="single.php" class="seemore">See Project </a>
 				</div>
 			</div>
 			<div class="single-project set-bg hotels" data-setbg="img/projects/Hilton/01.jpeg">
