@@ -1,4 +1,5 @@
 <?php include "header.php"; ?> 
+
 	<!-- Hero section start -->
 	<section class="hero-section">
 		<!-- left social link ber -->
@@ -20,23 +21,24 @@
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Atlantica <br> Hotel </h2>
-					<a href="single.php" class="site-btn sb-light">Voir Projet</a>
+					<a href="Atlantica.php" class="site-btn sb-light">Voir Projet</a>
 					</div>	
 				</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/bg2.jpeg">
+			<div class="hero-slide-item  set-bg" data-setbg="img/bg2.jpeg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Hotel <br>Hilton </h2>
-					<a href="#" class="site-btn sb-light">Voir Projet</a>
+					<a href="hilton.php" class="site-btn sb-light">Voir Projet</a>
 					</div>	
+					
 				</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/bg3.jpeg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Houch <br>Robbana</h2>
-					<a href="#" class="site-btn sb-light">Voir Projet</a>
+					<a href="HR.php" class="site-btn sb-light">Voir Projet</a>
 					</div>	
 				</div>
 			</div>	
@@ -44,16 +46,44 @@
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Houch <br>Robbana</h2>
-					<a href="#" class="site-btn sb-light">Voir Projet</a>
+					<a href="HR.php" class="site-btn sb-light">Voir Projet</a>
 					</div>	
 				</div>
 			</div>	
 		</div>
+
+
+		
 		<div class="slide-num-holder" id="snh-1"></div>
 		<div class="hero-right-text">architecture</div>
 	</section>
 	<!-- Hero section end -->
-
+<!-- #region 	<div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+  <ol class="carousel-indicators">
+    <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+    <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+    <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+  </ol>
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img class="d-block w-100" src="img/bg.jpeg" alt="First slide">
+    </div>
+    <div class="carousel-item">
+      <img class="d-block w-100" src="img/bg2.jpeg" alt="Second slide">
+    </div>
+    <div class="carousel-item">
+      <img class="d-block w-100" src="img/bg3.jpeg" alt="Third slide">
+    </div>
+  </div>
+  <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="sr-only">Previous</span>
+  </a>
+  <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="sr-only">Next</span>
+  </a>
+</div> -->
 
 	<!-- Intro section start -->
 	<section class="intro-section pt100 pb50">
@@ -61,12 +91,12 @@
 			<div class="row">
 				<div class="col-lg-7 intro-text mb-5 mb-lg-0">
 					<h2 class="sp-title">Nous sommes une agence <span>d'architecture </span>  </h2>
-					<p>  spécialisée dans le mariage entre la modernité et l'efficacité grâce à notre expertise pointue en BIM (Building Information Modeling). <br>
+					<p>  Spécialisée dans le mariage entre la modernité et l'efficacité grâce à notre expertise pointue en BIM (Building Information Modeling). <br>
 						 Chez BYM, nous croyons fermement en l'importance de l'intégration des dernières technologies pour offrir à nos clients une expérience architecturale incomparable. Le BIM nous permet non seulement de visualiser chaque détail de nos projets en trois dimensions, mais également de garantir une gestion de projet transparente et une coordination précise du début à la fin. </p>
 					<a href="#" class="site-btn sb-dark">See Project</a>
 				</div>
 				<div class="col-lg-5 pt-4">
-					<img src="img/intro.png" alt="">
+					<img src="img/intro.jpg" alt="">
 				</div>
 			</div>
 		</div>
@@ -87,7 +117,7 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-lg-7 pl-lg-0 offset-lg-5 cta-content">
-					<h2 class="sp-title">Dare to dream of a modern <span>home</span></h2>
+					<h2 class="sp-title">Savoir-faire / <br> Savoir <span> bâtir</span></h2>
 					<p>Notre agence dispose d'une expérience éprouvée dans les secteurs de l'habitat, de l'hôtellerie, des tours emblématiques, des projets bureautiques innovants et des centres commerciaux dynamiques, nous permettant ainsi de répondre efficacement à une diversité de besoins architecturaux avec excellence et savoir-faire. </p>
 					<div class="cta-icons">
 						<div class="cta-img-icon">
@@ -126,7 +156,7 @@
 				<div class="col">
 					<div class="milestone">
 						<h2>1k</h2>
-						<p>Twitter <br>Followers</p>
+						<p>Instagram <br>Followers</p>
 					</div>
 				</div>
 
@@ -137,100 +167,8 @@
 
 
 	<!-- Projects section start -->
-	<div class="projects-section pb50">
-		<div class="container">
-			<div class="row">
-				<div class="col-lg-3">
-					<div class="section-title">
-						<h1>Projects</h1>
-					</div>
-				</div>
-				<div class="col-lg-9">
-					<ul class="projects-filter-nav">
-						<li class="btn-filter" data-filter="*">All</li>
-						<li class="btn-filter" data-filter=".loge">Logements</li>
-						<li class="btn-filter" data-filter=".hotels">Hotels</li>
-						<li class="btn-filter" data-filter=".indus">Industries</li>
-						<li class="btn-filter" data-filter=".BIM">BIM</li>
-					</ul>
-				</div>
-			</div>
-		</div>                      
- 	<!-- <img src="img/projects/2s/01.jpeg" alt="" srcset="">-->
-		<div id="projects-carousel" class="projects-slider">
-			<div class="single-project set-bg loge" data-setbg="img/projects/HR/01.jpeg">
-				<div class="project-content">
-					<h2>Houch <br> Robbana</h2>
-					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
-				</div>
-			</div>
-			<div class="single-project set-bg hotels" data-setbg="img/projects/2s/01.jpeg">
-				<div class="project-content">
-					<h2>2s Tower </h2>
-					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
-				</div>
-			</div>
-			<div class="single-project set-bg hotels" data-setbg="img/projects/Atlantica/06.jpeg">
-				<div class="project-content">
-					<h2>Atlantica<br> Hotel</h2>
-					<p>Jan 19, 2018</p>
-					<a href="single.php" class="seemore">See Project </a>
-				</div>
-			</div>
-			<div class="single-project set-bg hotels" data-setbg="img/projects/Hilton/01.jpeg">
-				<div class="project-content">
-					<h2>Hotel <br> Hilton</h2>
-					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
-				</div>
-			</div>
-			<div class="single-project set-bg hotels" data-setbg="img/projects/Mezraya/01.jpg">
-				<div class="project-content">
-					<h2>Maison <br>D'hote Mezraya</h2>
-					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
-				</div>
-			</div>
-			<div class="single-project set-bg BIM" data-setbg="img/projects/Nuage/0001.png">
-				<div class="project-content">
-					<h2>Nuage <br>De point</h2>
-					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
-				</div>
-			</div>
-				<div class="single-project set-bg loge " data-setbg="img/projects/Cameroun/01.jpg">
-					<div class="project-content">
-						<h2>Villa  <br>Cameroun </h2>
-						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
-					</div>
-				</div>
-				<div class="single-project set-bg loge " data-setbg="img/projects/GAB/01.jpg">
-					<div class="project-content">
-						<h2> Villa <br> GAB </h2>
-						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
-					</div>
-				</div>
-				<div class="single-project set-bg loge " data-setbg="img/projects/H/01.jpg">
-					<div class="project-content">
-						<h2> Villa <br> H </h2>
-						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
-					</div>
-				</div>
-				<div class="single-project set-bg loge " data-setbg="img/projects/K/01.jpg">
-					<div class="project-content">
-						<h2> Vila <br>K </h2>
-						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
-					</div>
-				</div>
-		
-		</div>
-	</div>
+	<?php include "projects.php"; ?>
+
 	<!-- Projects section end -->
 
 

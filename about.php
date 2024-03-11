@@ -17,7 +17,7 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-lg-8 intro-text">
-					<h1>We are a creative Architecture<span>Studio</span></h1>
+					<h1>Nous sommes un studio d'architecture <span>créatif</span></h1>
 					<div class="row">
 						<div class="col-md-6">
 							<p>Fondée par Ben Younes Maher, doté d'une
@@ -44,7 +44,7 @@
 	<!-- Intro section end -->
 
 
-	<!-- Team section start -->
+	<!-- Team section start
 	<section class="team-section spad">
 		<div class="container">
 			<div class="section-title mb100">
@@ -81,7 +81,7 @@
 			</div>
 		</div>
 	</section>
-	<!-- Team section end -->
+	 Team section end -->
 
 
 	

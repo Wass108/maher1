@@ -584,7 +584,17 @@ ol {
 	bottom: 70px;
 }
 
-.hero-slider .owl-nav .owl-prev,
+.hero-slider .owl-nav .owl-prev{
+	display: inline-block;
+	margin-right: 30px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #fff;
+	letter-spacing: 1px;
+	-webkit-transition: all 0.4s;
+	-o-transition: all 0.4s;
+	transition: all 0.4s;
+}
 .hero-slider .owl-nav .owl-next {
 	display: inline-block;
 	margin-right: 30px;

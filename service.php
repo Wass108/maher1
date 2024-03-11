@@ -1,4 +1,5 @@
-<?php include "header.php";?>   
+  <?php include "header.php"; ?> 
+ 
 
 
 	<!-- Page header section start -->
@@ -29,8 +30,8 @@
 					</div>
 				</div>
 				<div class="col-lg-7 service-text">
-					<h1>We offer top quality project <span>services</span></h1>
-					<h2>01.Super-fast support.</h2>
+					<h1>Nous offrons un rendu numérique, 2D & 3D et 4D,  <span>selon vos besoins.</span></h1>
+					<h2>01.La technologie.</h2>
 					<p>Comprendre vos besoins est notre priorité absolue. Nous croyons fermement qu'une collaboration étroite avec nos clients est la clé du succès de chaque projet.   </p>
 					<ol>
 						<li>02.Modéliser. </li>
@@ -51,30 +52,30 @@
 				<div class="col-lg-4 col-md-6">
 					<div class="solid-service-box">
 						<h2>01.</h2>
-						<h3>The idea</h3>
+						<h3>Concepts</h3>
 						<p>Chaque projet est unique, <br> c'est pourquoi nous adoptons 
 							une approche personnalisée à chaque étape de notre
 							collaboration </p>
-						<a href="#" class="readmore">READ MORE</a>
+						
 					</div>
 				</div>
 				<div class="col-lg-4 col-md-6">
 					<div class="solid-service-box">
 						<h2>02.</h2>
-						<h3>Behind the work</h3>
+						<h3>Connexions</h3>
 						<p>Chez nous, il y a une connexion humaine derrière chaque
 							projet. Nous croyons fermement que chaque interaction,<br>	
 							chaque idée partagée et chaque décision prise est
 							imprégnée de notre engagement envers nos clients. </p>
-						<a href="#" class="readmore">READ MORE</a>
+						
 					</div>
 				</div>
 				<div class="col-lg-4 col-md-12">
 					<div class="solid-service-box">
 						<h2>03.</h2>
-						<h3>The Success</h3>
+						<h3>Rendus</h3>
 						<p>Votre succès est notre plus grande source de motivation et notre plus grande fierté. </p>
-						<a href="#" class="readmore">READ MORE</a>
+						
 					</div>
 				</div>
 			</div>
