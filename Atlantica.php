@@ -27,12 +27,7 @@
 				</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/Atlantica/01.jpeg">
-				
-				<div class="slide-inner">
-				
-					<h2> <br></h2> <br><br>
-					<br>br
-					
+				<div class="slide-inner">					
 			</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/Atlantica/02.jpeg">

@@ -27,18 +27,11 @@
 				</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/HR/04.jpeg">
-				
 				<div class="slide-inner">
-				
-				<br><br> <br><br><br>
-					<br><br><br>
-					
 			</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/HR/02.jpeg">
 				<div class="slide-inner">
-				<br><br> <br><br><br>
-					<br><br><br>
 			</div>
 			</div>	
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/HR/03.jpeg">

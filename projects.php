@@ -24,14 +24,14 @@
 				<div class="project-content">
 					<h2>Houch <br> Robbana</h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="HR.php" class="seemore">See Project </a>
 				</div>
 			</div>
 			<div class="single-project set-bg hotels" data-setbg="img/projects/2s/01.jpeg">
 				<div class="project-content">
 					<h2>2s Tower </h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="2s.php" class="seemore">See Project </a>
 				</div>
 			</div>
 			<div class="single-project set-bg hotels" data-setbg="img/projects/Atlantica/06.jpeg">
@@ -45,7 +45,7 @@
 				<div class="project-content">
 					<h2>Hotel <br> Hilton</h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="hilton.php" class="seemore">See Project </a>
 				</div>
 			</div>
 			<div class="single-project set-bg hotels" data-setbg="img/projects/Mezraya/01.jpg">
