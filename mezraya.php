@@ -22,7 +22,7 @@
 			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/01.jpg">
 				<div class="slide-inner">
 					<div class="slide-content">
-					<h2>Houch <br> Robbana </h2><br>
+					<h2>Maison <br>  D'hote <br> Mezraya </h2><br>
 					</div>	
 				</div>
 			</div>	
@@ -54,7 +54,7 @@
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/09.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/09.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
@@ -74,7 +74,7 @@
 
 			<div class="row mb-5 justify-content-between">
 				<div class="col-lg-6 mb-lg-0 mb-4">
-					<img src="img/projects/mezraya/08.jpg"  alt="Image" class="">
+					<img src="img/projects/mezraya/08.png"  alt="Image" class="">
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>

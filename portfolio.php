@@ -63,16 +63,16 @@
 				<div class="grid-item set-bg grid-wide design" data-setbg="img/projects/Mezraya/01.jpg"><a class="img-popup" href="img/projects/Mezraya/01.jpg">  </a></div>
 				<!-- portfolio Nuage -->
 				
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/001.jpg"><a class="img-popup" href="img/projects/Nuage/001.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/01.jpg"><a class="img-popup" href="img/projects/Nuage/01.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/002.jpg"><a class="img-popup" href="img/projects/Nuage/002.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/02.jpg"><a class="img-popup" href="img/projects/Nuage/02.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/003.jpg"><a class="img-popup" href="img/projects/Nuage/003.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/03.jpg"><a class="img-popup" href="img/projects/Nuage/03.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/004.jpg"><a class="img-popup" href="img/projects/Nuage/004.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/04.jpg"><a class="img-popup" href="img/projects/Nuage/04.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/005.jpg"><a class="img-popup" href="img/projects/Nuage/005.jpg">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/05.jpg"><a class="img-popup" href="img/projects/Nuage/05.jpg">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/001.png"><a class="img-popup" href="img/projects/Nuage/001.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/01.png"><a class="img-popup" href="img/projects/Nuage/01.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/002.png"><a class="img-popup" href="img/projects/Nuage/002.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/02.png"><a class="img-popup" href="img/projects/Nuage/02.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/003.png"><a class="img-popup" href="img/projects/Nuage/003.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/03.png"><a class="img-popup" href="img/projects/Nuage/03.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/004.png"><a class="img-popup" href="img/projects/Nuage/004.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/04.png"><a class="img-popup" href="img/projects/Nuage/04.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/005.png"><a class="img-popup" href="img/projects/Nuage/005.png">  </a></div>
+				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/05.png"><a class="img-popup" href="img/projects/Nuage/05.png">  </a></div>
 			</div>
 		</div>
 		<div class="container">

@@ -52,14 +52,14 @@
 				<div class="project-content">
 					<h2>Maison <br>D'hote Mezraya</h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="mezraya.php" class="seemore">See Project </a>
 				</div>
 			</div>
-			<div class="single-project set-bg BIM" data-setbg="img/projects/Nuage/0001.jpg">
+			<div class="single-project set-bg BIM" data-setbg="img/projects/Nuage/0001.png">
 				<div class="project-content">
 					<h2>Nuage <br>De point</h2>
 					<p>Jan 19, 2018</p>
-					<a href="#" class="seemore">See Project </a>
+					<a href="nuage.php" class="seemore">See Project </a>
 				</div>
 			</div>
 				<div class="single-project set-bg loge " data-setbg="img/projects/Cameroun/01.jpg">
