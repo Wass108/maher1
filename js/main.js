@@ -60,7 +60,7 @@ $(window).on('load', function() {
         navText: ['<i class="fa fa-long-arrow-left"></i> PREV', 'NEXT<i class="fa fa-long-arrow-right"></i>'],
         smartSpeed: 1200,
         autoHeight: false,
-        autoplay: false,
+        autoplay: true,
         mouseDrag: false,
         onInitialized: function() {
         	var a = this.items().length;

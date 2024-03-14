@@ -66,28 +66,35 @@
 					<div class="project-content">
 						<h2>Villa  <br>Cameroun </h2>
 						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
+						<a href="cameroun.php" class="seemore">See Project </a>
 					</div>
 				</div>
 				<div class="single-project set-bg loge " data-setbg="img/projects/GAB/01.jpg">
 					<div class="project-content">
 						<h2> Villa <br> GAB </h2>
 						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
+						<a href="GAB.php" class="seemore">See Project </a>
 					</div>
 				</div>
 				<div class="single-project set-bg loge " data-setbg="img/projects/H/01.jpg">
 					<div class="project-content">
 						<h2> Villa <br> H </h2>
 						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
+						<a href="H.php" class="seemore">See Project </a>
 					</div>
 				</div>
 				<div class="single-project set-bg loge " data-setbg="img/projects/K/01.jpg">
 					<div class="project-content">
 						<h2> Vila <br>K </h2>
 						<p>Jan 19, 2018</p>
-						<a href="#" class="seemore">See Project </a>
+						<a href="K.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/dakar/01.jpg">
+					<div class="project-content">
+						<h2> Vila <br>Dakar </h2>
+						<p>Jan 19, 2018</p>
+						<a href="dakar.php" class="seemore">See Project </a>
 					</div>
 				</div>
 		

@@ -17,7 +17,7 @@
 		</div>
 		<!-- hero slider area -->
 		<div class="hero-slider">
-			<div class="hero-slide-item set-bg" data-setbg="img/bg.jpeg">
+			<div class="hero-slide-item set-bg" data-setbg="img/bg5.jpeg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Atlantica <br> Hotel </h2>
@@ -84,6 +84,7 @@
     <span class="sr-only">Next</span>
   </a>
 </div> -->
+
 
 	<!-- Intro section start -->
 	<section class="intro-section pt100 pb50">

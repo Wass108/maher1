@@ -45,24 +45,31 @@
 				<!-- portfolio GAB -->
 				<div class="grid-item set-bg  grid-long design" data-setbg="img/projects/GAB/01.jpg"><a class="img-popup" href="img/projects/GAB/01.jpg">  </a></div>
 				<!-- portfolio H -->
-				<div class="grid-item set-bg grid design" data-setbg="img/projects/H/01.jpg"><a class="img-popup" href="img/projects/H/01.jpg">  </a></div>
+				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/H/01.jpg"><a class="img-popup" href="img/projects/H/01.jpg">  </a></div>
 				<!-- portfolio Hilton -->
 				<div class="grid-item set-bg grid-wide design" data-setbg="img/projects/Hilton/01.jpeg"><a class="img-popup" href="img/projects/Hilton/01.jpeg">  </a></div>
 				<div class="grid-item set-bg  design"  data-setbg="img/projects/Hilton/02.jpeg"><a class="img-popup" href="img/projects/Hilton/02.jpeg">  </a></div>
 				<div class="grid-item set-bg   grid-long design" data-setbg="img/projects/Hilton/03.jpeg"><a class="img-popup" href="img/projects/Hilton/03.jpeg">  </a></div>
 				<!-- portfolio houch robbana -->
-				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/HR/01.jpeg"><a class="img-popup" href="img/projects/HR/01.jpeg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/01.jpeg"><a class="img-popup" href="img/projects/HR/01.jpeg">  </a></div>
 				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/02.jpeg"><a class="img-popup" href="img/projects/HR/02.jpeg">  </a></div>
 				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/03.jpeg"><a class="img-popup" href="img/projects/HR/03.jpeg">  </a></div>
 				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/04.jpeg"><a class="img-popup" href="img/projects/HR/04.jpeg">  </a></div>
 				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/05.jpeg"><a class="img-popup" href="img/projects/HR/05.jpeg">  </a></div>
 				<div class="grid-item set-bg  grid-long design" data-setbg="img/projects/HR/06.jpeg"><a class="img-popup" href="img/projects/HR/06.jpeg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/07.jpg"><a class="img-popup" href="img/projects/HR/07.jpg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/08.jpg"><a class="img-popup" href="img/projects/HR/08.jpg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/09.jpg"><a class="img-popup" href="img/projects/HR/09.jpg">  </a></div>
 				<!-- portfolio K -->
 				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/K/01.jpg"><a class="img-popup" href="img/projects/K/01.jpg">  </a></div>
 				<!-- portfolio mezraya -->
 				<div class="grid-item set-bg grid-wide design" data-setbg="img/projects/Mezraya/01.jpg"><a class="img-popup" href="img/projects/Mezraya/01.jpg">  </a></div>
+				<!-- portfolio dakar -->
+				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/01.jpg"><a class="img-popup" href="img/projects/dakar/01.jpg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/02.jpg"><a class="img-popup" href="img/projects/dakar/02.jpg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/03.jpg"><a class="img-popup" href="img/projects/dakar/03.jpg">  </a></div>
+				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/04.jpg"><a class="img-popup" href="img/projects/dakar/04.jpg">  </a></div>
 				<!-- portfolio Nuage -->
-				
 				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/001.png"><a class="img-popup" href="img/projects/Nuage/001.png">  </a></div>
 				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/01.png"><a class="img-popup" href="img/projects/Nuage/01.png">  </a></div>
 				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/002.png"><a class="img-popup" href="img/projects/Nuage/002.png">  </a></div>
