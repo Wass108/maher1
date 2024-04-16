@@ -70,7 +70,7 @@
 
 			<div class="row mb-5 justify-content-between">
 				<div class="col-lg-6 mb-lg-0 mb-4">
-					<img src="img/projects/HR/08.jpg"  alt="Image" class="">
+					<img src="img/projects/HR/02.jpeg"  alt="Image" class="">
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>

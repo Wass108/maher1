@@ -34,35 +34,35 @@
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/002.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/002.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/02.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/02.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/003.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/003.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/03.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/03.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/004.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/004.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/04.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/04.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/005.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/005.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/05.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/05.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	

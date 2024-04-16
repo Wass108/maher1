@@ -60,7 +60,6 @@
 					<h2>Nuage <br>De point</h2>
 					<p>Jan 19, 2018</p>
 					<a href="nuage.php" class="seemore">See Project </a>
-					<img src="img/projects/Nuage/001.PNG" alt="">
 				</div>
 			</div>
 				<div class="single-project set-bg loge " data-setbg="img/projects/Cameroun/01.jpg">
