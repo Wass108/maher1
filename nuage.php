@@ -19,50 +19,50 @@
 		</div>
 		<!-- hero slider area -->
 		<div style="background-color: #3f3f3f;" class="hero-slider" >
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/003.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/003.PNG">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Nuage <br> De point </h2><br>
 					</div>	
 				</div>
 			</div>	
-			<div class="hero-slide-item set-bg" style="margin-left: 35%; width: 30%; " data-setbg="img/projects/nuage/001.png">
+			<div class="hero-slide-item set-bg" style="margin-left: 35%; width: 30%; " data-setbg="img/projects/Nuage/001.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" style="margin-left: 35%; width: 30%; " data-setbg="img/projects/nuage/01.png">
+			<div class="hero-slide-item set-bg" style="margin-left: 35%; width: 30%; " data-setbg="img/projects/Nuage/01.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/002.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/002.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/02.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/02.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/003.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/003.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/03.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/03.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/004.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/004.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/04.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/04.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/005.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/005.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/nuage/05.PNG">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Nuage/05.PNG">
 				<div class="slide-inner">
 			</div>
 			</div>	
@@ -82,7 +82,7 @@
 
 			<div class="row mb-5 justify-content-between">
 				<div class="col-lg-6 mb-lg-0 mb-4">
-					<img src="img/projects/nuage/02.png"  alt="Image" class="">
+					<img src="img/projects/Nuage/02.PNG"  alt="Image" class="">
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>
