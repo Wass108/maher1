@@ -19,7 +19,7 @@
 		</div>
 		<!-- hero slider area -->
 		<div class="hero-slider">
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/cameroun/01.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Cameroun/01.jpg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Villa <br> Cameroun </h2><br>
@@ -27,7 +27,7 @@
 				</div>
 			</div>	
 			<!-- image -->
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/cameroun/02.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Cameroun/02.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
