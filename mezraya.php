@@ -19,42 +19,42 @@
 		</div>
 		<!-- hero slider area -->
 		<div class="hero-slider">
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/01.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/01.jpg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>Maison <br>  D'hote <br> Mezraya </h2><br>
 					</div>	
 				</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/04.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/04.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/02.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/02.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/03.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/03.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/05.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/05.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/06.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/06.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/07.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/07.png">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/08.png">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/08.png">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/mezraya/09.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/Mezraya/09.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
@@ -74,7 +74,7 @@
 
 			<div class="row mb-5 justify-content-between">
 				<div class="col-lg-6 mb-lg-0 mb-4">
-					<img src="img/projects/mezraya/08.png"  alt="Image" class="">
+					<img src="img/projects/Mezraya/08.png"  alt="Image" class="">
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>
