@@ -58,9 +58,10 @@
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>
-					<p>Delectus voluptatum distinctio quos eius excepturi sunt pariatur, aut, doloribus officia ea molestias beatae laudantium, quam odio ipsum veritatis est maiores velit quasi blanditiis et natus accusamus itaque.</p>
-					<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae placeat, unde sequi quas ipsum illo? Commodi accusantium, sit eveniet? Maiores tempora corporis ea nostrum magnam similique optio autem, dolor incidunt?</p>
-					<p>Recusandae quam dicta repellat consequatur, facilis magnam minus unde, asperiores voluptatibus temporibus obcaecati, nihil libero. Maxime consectetur asperiores excepturi quidem deleniti, autem incidunt? Error nisi, eius fugiat expedita quia cupiditate!</p>
+					<p>Réaménager les anciennes constructions à Djerba semble être une spécialité de votre agence. 
+	</p>
+	<p>Rénover ces habitations peut non seulement préserver le charme traditionnel de la région, mais aussi les adapter aux besoins contemporains
+	</p>
 					<p><a href="#" class="btn btn-primary">Visit Website</a></p>
               
 
@@ -69,17 +70,12 @@
 			</div>
 			<div class="row">
 				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Work year:</span>  2020
+					<span class="text-black-50 d-block">Année : </span>  2020
 				</div>
 				<div class="col-sm-3 border-left">
 					<span class="text-black-50 d-block">Client:</span> XYZ Inc.
 				</div>
-				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Started:</span> 25 Jan 2020
-				</div>
-				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Finished:</span> 02 Dec 2020
-				</div>
+				
 			</div>
 		</div>
 	</div>

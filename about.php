@@ -3,9 +3,9 @@
 
 
 	<!-- Page header section start -->
-	<section class="page-header-section set-bg" data-setbg="img/header-bg.jpg">
+	<section class="page-header-section set-bg" data-setbg="img/about_bg.jpg">
 		<div class="container">
-			<h1 class="header-title">About us<span>.</span></h1>
+			<h1 class="header-title">Ben Younes Maher<span>.</span></h1>
 		</div>
 	</section>
 	<!-- Page header section end -->

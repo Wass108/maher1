@@ -54,9 +54,9 @@
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>
-					<p>Delectus voluptatum distinctio quos eius excepturi sunt pariatur, aut, doloribus officia ea molestias beatae laudantium, quam odio ipsum veritatis est maiores velit quasi blanditiis et natus accusamus itaque.</p>
-					<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae placeat, unde sequi quas ipsum illo? Commodi accusantium, sit eveniet? Maiores tempora corporis ea nostrum magnam similique optio autem, dolor incidunt?</p>
-					<p>Recusandae quam dicta repellat consequatur, facilis magnam minus unde, asperiores voluptatibus temporibus obcaecati, nihil libero. Maxime consectetur asperiores excepturi quidem deleniti, autem incidunt? Error nisi, eius fugiat expedita quia cupiditate!</p>
+					<p>Notre agence est chargée de concevoir l'architecture et de créer la maquette BIM pour le prochain Marina Hotel de la chaîne Hilton.
+Ainsi, en combinant une maquette numérique pour visualiser le design et une collaboration étroite avec la chaîne Hilton pour comprendre mieux le besoin
+</p>
 					<p><a href="#" class="btn btn-primary">Visit Website</a></p>
               
 
@@ -65,17 +65,12 @@
 			</div>
 			<div class="row">
 				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Work year:</span>  2020
+					<span class="text-black-50 d-block">Année : </span>  2023
 				</div>
 				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Client:</span> XYZ Inc.
+					<span class="text-black-50 d-block">Client:</span> Hilton
 				</div>
-				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Started:</span> 25 Jan 2020
-				</div>
-				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Finished:</span> 02 Dec 2020
-				</div>
+				
 			</div>
 		</div>
 	</div>

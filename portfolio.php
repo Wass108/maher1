@@ -4,7 +4,7 @@
 
 
 	<!-- Page header section start -->
-	<section class="page-header-section set-bg" data-setbg="img/header-bg.jpg">
+	<section class="page-header-section set-bg" data-setbg="img/portfolio-bg.jpg">
 		<div class="container">
 			<h1 class="header-title">Portfolio<span>.</span></h1>
 		</div>
