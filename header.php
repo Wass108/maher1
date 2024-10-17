@@ -1,3 +1,7 @@
+<?php
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -44,10 +48,10 @@
 		<div class="phone-number">+216 22 953 328</div>
 		<nav class="nav-menu">
 			<ul>
-				<li class="active"><a href="index.php">Accueil</a></li>
-				<li><a href="about.php">About us</a></li>
-				<li><a href="service.php">Services</a></li>
-				<li><a href="portfolio.php">Portfolio</a></li>
+			<li class="<?= ($current_page == 'index.php') ? 'active' : '' ?>"><a href="index.php">Accueil</a></li>
+            <li class="<?= ($current_page == 'about.php') ? 'active' : '' ?>"><a href="about.php">About us</a></li>
+            <li class="<?= ($current_page == 'service.php') ? 'active' : '' ?>"><a href="service.php">Services</a></li>
+            <li class="<?= ($current_page == 'portfolio.php') ? 'active' : '' ?>"><a href="portfolio.php">Portfolio</a></li>
 			
 			</ul>
 		</nav>
