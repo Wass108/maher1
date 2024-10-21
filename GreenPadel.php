@@ -19,27 +19,25 @@
 		</div>
 		<!-- hero slider area -->
 		<div class="hero-slider">
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/01cc.jpeg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/GreenPadel/01.jpg">
 				<div class="slide-inner">
 					<div class="slide-content">
-					<h2>2s <br> Tower </h2><br>
+					<h2>Green <br> Padel </h2><br>
 					</div>	
 				</div>
 			</div>	
-			<!-- image -->
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/02.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/GreenPadel/02.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/03.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/GreenPadel/03.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/05.jpg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/GreenPadel/04.jpg">
 				<div class="slide-inner">
 			</div>
 			</div>	
-			
 			
 		
 			
@@ -56,11 +54,13 @@
 
 			<div class="row mb-5 justify-content-between">
 				<div class="col-lg-6 mb-lg-0 mb-4">
-					<img src="img/projects/2s/01.jpeg"  alt="Image" class="">
+					<img src="img/projects/HR/02.jpeg"  alt="Image" class="">
 				</div>
 				<div class="col-lg-5">
 					<div class="heading">Description</div>
-					<P>La construction virtuelle en BIM (Building Information Modeling) offre de nombreux avantages, notamment une meilleure coordination entre les différentes équipes de conception et de construction, une réduction des erreurs et des coûts, ainsi qu'une visualisation plus réaliste du projet final. Avec une tour de 30 étages comme 2STower, le BIM peut être particulièrement utile pour gérer la complexité du projet et assurer son succès.</P>
+					<p>Delectus voluptatum distinctio quos eius excepturi sunt pariatur, aut, doloribus officia ea molestias beatae laudantium, quam odio ipsum veritatis est maiores velit quasi blanditiis et natus accusamus itaque.</p>
+					<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae placeat, unde sequi quas ipsum illo? Commodi accusantium, sit eveniet? Maiores tempora corporis ea nostrum magnam similique optio autem, dolor incidunt?</p>
+					<p>Recusandae quam dicta repellat consequatur, facilis magnam minus unde, asperiores voluptatibus temporibus obcaecati, nihil libero. Maxime consectetur asperiores excepturi quidem deleniti, autem incidunt? Error nisi, eius fugiat expedita quia cupiditate!</p>
 					<p><a href="#" class="btn btn-primary">Visit Website</a></p>
               
 
@@ -69,12 +69,17 @@
 			</div>
 			<div class="row">
 				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Année : </span>  2023
+					<span class="text-black-50 d-block">Work year:</span>  2020
 				</div>
 				<div class="col-sm-3 border-left">
-					<span class="text-black-50 d-block">Client:</span> AD
+					<span class="text-black-50 d-block">Client:</span> XYZ Inc.
 				</div>
-				
+				<div class="col-sm-3 border-left">
+					<span class="text-black-50 d-block">Started:</span> 25 Jan 2020
+				</div>
+				<div class="col-sm-3 border-left">
+					<span class="text-black-50 d-block">Finished:</span> 02 Dec 2020
+				</div>
 			</div>
 		</div>
 	</div>
