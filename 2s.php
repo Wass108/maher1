@@ -19,7 +19,7 @@
 		</div>
 		<!-- hero slider area -->
 		<div class="hero-slider">
-			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/01cc.jpeg">
+			<div class="hero-slide-item set-bg" data-setbg="img/projects/2s/01.jpeg">
 				<div class="slide-inner">
 					<div class="slide-content">
 					<h2>2s <br> Tower </h2><br>

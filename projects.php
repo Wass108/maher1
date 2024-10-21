@@ -97,6 +97,69 @@
 						<a href="dakar.php" class="seemore">See Project </a>
 					</div>
 				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/GreenPadel/01.jpg">
+					<div class="project-content">
+						<h2> Green <br>Padel </h2>
+						<p>Jan 19, 2018</p>
+						<a href="GreenPadel.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Hotel_Marina/04.jpg">
+					<div class="project-content">
+						<h2> Hotel<br>Marina </h2>
+						<p>Jan 19, 2018</p>
+						<a href="Hotel_Marina.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Le_port/02.jpg">
+					<div class="project-content">
+						<h2> Le <br>Port</h2>
+						<p>Jan 19, 2018</p>
+						<a href="Le_port.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Maison_hotes_Djerba/01.jpg">
+					<div class="project-content">
+						<h2> Maison <br> D'hôtes  <br>Djerba </h2>
+						<p>Jan 19, 2018</p>
+						<a href="Maison_hotes_Djerba.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Maison_hotes/03.jpg">
+					<div class="project-content">
+						<h2> Maison <br>D'hôtes </h2>
+						<p>Jan 19, 2018</p>
+						<a href="Maison_hotes.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/mby/01.jpg">
+					<div class="project-content">
+						<h2> mby <br> </h2>
+						<p>Jan 19, 2018</p>
+						<a href="mby.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/nby/02.jpg">
+					<div class="project-content">
+						<h2> nby <br> </h2>
+						<p>Jan 19, 2018</p>
+						<a href="nby.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Orange_Kinshasa/01.jpg">
+					<div class="project-content">
+						<h2> Orange <br>Kinshasa </h2>
+						<p>Jan 19, 2018</p>
+						<a href="Orange_Kinshasa.php" class="seemore">See Project </a>
+					</div>
+				</div>
+				<div class="single-project set-bg loge " data-setbg="img/projects/Siege_Orange/01.jpg">
+					<div class="project-content">
+						<h2> Siege <br>Orange </h2>
+						<p>Jan 19, 2018</p>
+						<a href="Siege_Orange.php" class="seemore">See Project </a>
+					</div>
+				</div>
 		
 		</div>
 	</div>
