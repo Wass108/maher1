@@ -1,6 +1,12 @@
-<?php 
-include 'auth_check.php'; 
-// Ne pas mettre d'affichage HTML ici 
+<?php
+// Ce header est conçu pour permettre les redirections même après son inclusion
+// Il utilise output buffering pour retarder l'envoi du HTML au navigateur
+
+// Activer la mise en buffer de sortie
+ob_start();
+
+// Inclure la vérification d'authentification
+include 'auth_check.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -128,3 +134,6 @@ include 'auth_check.php';
 
             <!-- Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
+<?php
+// Le buffer continue à capturer tout le HTML jusqu'à ce qu'il soit explicitement vidé
+?>

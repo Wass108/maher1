@@ -1,6 +1,7 @@
 <?php
+// Inclure les fichiers nécessaires (en utilisant la version buffered du header)
 include "../connect/connect.php";
-include "admin_header.php";
+include "admin_header_buffered.php";  // On utilise désormais la version avec buffer
 
 $message = '';
 $error = '';
@@ -19,9 +20,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $featured = isset($_POST['featured']) ? 1 : 0;
     $hidden = isset($_POST['hidden']) ? 1 : 0;
     
+    // Logique pour empêcher qu'un projet soit à la fois en une et masqué
+    if ($featured == 1 && $hidden == 1) {
+        // Si les deux sont cochés, on privilégie "masqué" et on désactive "en une"
+        $featured = 0;
+        $error = "Un projet ne peut pas être à la fois en une et masqué. Le projet sera masqué mais pas mis en une.";
+    }
+    
     // Valider les données
     if (empty($title) || empty($slug)) {
-        $error = "Le titre et le slug sont obligatoires.";
+        $error .= "Le titre et le slug sont obligatoires.";
     } else {
         // Vérifier si le slug existe déjà
         $query = "SELECT COUNT(*) as count FROM projects WHERE slug = :slug";
@@ -68,6 +76,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
+
+// À ce stade, toutes les redirections potentielles ont été traitées
+// On peut donc vider le buffer pour afficher la page
+ob_end_flush();
 ?>
 
 <div class="content-header">
@@ -163,6 +175,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" class="form-control" id="btnText" name="btnText" value="Voir le projet">
                     </div>
                     
+                    <!-- Section modifiée pour les cases à cocher -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-check mb-3">
@@ -176,6 +189,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="form-check-label" for="hidden">Masquer le projet (ne pas afficher sur le site)</label>
                             </div>
                         </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <small>Note: Un projet ne peut pas être à la fois en Une et masqué. Si vous cochez les deux options, l'option "masquer" sera prioritaire.</small>
                     </div>
                     
                     <div class="form-group mt-4">
@@ -197,6 +213,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         .replace(/_+/g, '_')
                         .replace(/^_|_$/g, '');
         document.getElementById('slug').value = slug;
+    });
+    
+    // Ajouter un script pour gérer l'interaction entre les deux checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
+        var featuredCheckbox = document.getElementById('featured');
+        var hiddenCheckbox = document.getElementById('hidden');
+        
+        hiddenCheckbox.addEventListener('change', function() {
+            if(this.checked) {
+                // Si "masqué" est coché, on décoche "en une"
+                featuredCheckbox.checked = false;
+                featuredCheckbox.disabled = true;
+            } else {
+                // Si "masqué" est décoché, on permet de cocher "en une"
+                featuredCheckbox.disabled = false;
+            }
+        });
+        
+        featuredCheckbox.addEventListener('change', function() {
+            if(this.checked) {
+                // Si "en une" est coché, on décoche "masqué"
+                hiddenCheckbox.checked = false;
+            }
+        });
     });
 </script>
 

@@ -11,12 +11,19 @@ if (!isset($_GET['id'])) {
 $projectId = $_GET['id'];
 
 // Récupérer l'état actuel du projet
-$query = "SELECT featured, title FROM projects WHERE id = :id";
+$query = "SELECT featured, hidden, title FROM projects WHERE id = :id";
 $stmt = $pdo->prepare($query);
 $stmt->execute(['id' => $projectId]);
 $project = $stmt->fetch();
 
 if ($project) {
+    // Si on tente de mettre en une un projet masqué, afficher un message d'erreur
+    if (!$project['featured'] && $project['hidden']) {
+        $_SESSION['message'] = "Le projet \"" . htmlspecialchars($project['title']) . "\" est masqué et ne peut pas être mis en une. Veuillez d'abord le rendre visible.";
+        header("Location: projects.php");
+        exit;
+    }
+    
     // Basculer l'état (featured)
     $newState = $project['featured'] ? 0 : 1;
     
