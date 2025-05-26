@@ -1,7 +1,29 @@
-  <?php include "header.php"; ?> 
+<?php include "header.php"; ?> 
 
- 
+<?php
+// Définir le dossier principal du portfolio - correction du chemin
+$portfolioMainDir = "img/portfolio/";
 
+// Définir les catégories (dossiers) disponibles
+$categories = array('Photographie', 'Design', 'Chantier');
+
+// Tableau pour stocker les images par catégorie
+$portfolioImages = [];
+
+// Récupérer toutes les images de chaque catégorie
+foreach ($categories as $category) {
+    $categoryPath = $portfolioMainDir . $category . "/";
+    if (is_dir($categoryPath)) {
+        $images = glob($categoryPath . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        foreach ($images as $image) {
+            $portfolioImages[] = [
+                'path' => str_replace(' ', '%20', $image), // Encoder les espaces pour l'URL
+                'category' => strtolower($category)
+            ];
+        }
+    }
+}
+?>
 
 	<!-- Page header section start -->
 	<section class="page-header-section set-bg" data-setbg="img/portfolio-bg.jpg">
@@ -18,10 +40,9 @@
 			<!-- portfolio filter menu -->
 			<ul class="portfolio-filter">
 				<li class="filter" data-filter="*">All</li>
-				<li class="filter" data-filter=".photo">Photographie</li>
+				<li class="filter" data-filter=".photographie">Photographie</li>
 				<li class="filter" data-filter=".design">Design</li>
-				<li class="filter" data-filter=".chan">Chantier</li>
-			
+				<li class="filter" data-filter=".chantier">Chantier</li>
 			</ul>
 		</div>
 	
@@ -29,68 +50,29 @@
 		<div class="portfolio-warp spad">
 			<div id="portfolio">
 				<div class="grid-sizer"></div>
-				<!-- portfolio 2s Tower -->
-				<div class="grid-item set-bg grid-wide photo" data-setbg="img/projects/2s/01.jpeg"><a class="img-popup" href="img/projects/2s/01.jpeg"></a></div>
-				<!-- portfolio Atlantica -->
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/01.jpeg"><a class="img-popup" href="img/projects/Atlantica/01.jpeg">  </a></div>
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/02.jpeg"><a class="img-popup" href="img/projects/Atlantica/02.jpeg">  </a></div>
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/03.jpeg"><a class="img-popup" href="img/projects/Atlantica/03.jpeg">  </a></div>
-				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/Atlantica/04.jpeg"><a class="img-popup" href="img/projects/Atlantica/04.jpeg">  </a></div>
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/05.jpeg"><a class="img-popup" href="img/projects/Atlantica/05.jpeg">  </a></div>
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/06.jpeg"><a class="img-popup" href="img/projects/Atlantica/06.jpeg">  </a></div>
-				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/Atlantica/07.jpeg"><a class="img-popup" href="img/projects/Atlantica/07.jpeg">  </a></div>
-				<div class="grid-item set-bg design" data-setbg="img/projects/Atlantica/08.jpeg"><a class="img-popup" href="img/projects/Atlantica/08.jpeg">  </a></div>
-				<!-- portfolio Cameroun -->
-				<div class="grid-item set-bg  design" data-setbg="img/projects/Cameroun/01.jpg"><a class="img-popup" href="img/projects/Cameroun/01.jpg">  </a></div>
-				<!-- portfolio GAB -->
-				<div class="grid-item set-bg  grid-long design" data-setbg="img/projects/GAB/01.jpg"><a class="img-popup" href="img/projects/GAB/01.jpg">  </a></div>
-				<!-- portfolio H -->
-				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/H/01.jpg"><a class="img-popup" href="img/projects/H/01.jpg">  </a></div>
-				<!-- portfolio Hilton -->
-				<div class="grid-item set-bg grid-wide design" data-setbg="img/projects/Hilton/01.jpeg"><a class="img-popup" href="img/projects/Hilton/01.jpeg">  </a></div>
-				<div class="grid-item set-bg  design"  data-setbg="img/projects/Hilton/02.jpeg"><a class="img-popup" href="img/projects/Hilton/02.jpeg">  </a></div>
-				<div class="grid-item set-bg   grid-long design" data-setbg="img/projects/Hilton/03.jpeg"><a class="img-popup" href="img/projects/Hilton/03.jpeg">  </a></div>
-				<!-- portfolio houch robbana -->
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/01.jpeg"><a class="img-popup" href="img/projects/HR/01.jpeg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/02.jpeg"><a class="img-popup" href="img/projects/HR/02.jpeg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/03.jpeg"><a class="img-popup" href="img/projects/HR/03.jpeg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/04.jpeg"><a class="img-popup" href="img/projects/HR/04.jpeg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/05.jpeg"><a class="img-popup" href="img/projects/HR/05.jpeg">  </a></div>
-				<div class="grid-item set-bg  grid-long design" data-setbg="img/projects/HR/06.jpeg"><a class="img-popup" href="img/projects/HR/06.jpeg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/07.jpg"><a class="img-popup" href="img/projects/HR/07.jpg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/08.jpg"><a class="img-popup" href="img/projects/HR/08.jpg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/HR/09.jpg"><a class="img-popup" href="img/projects/HR/09.jpg">  </a></div>
-				<!-- portfolio K -->
-				<div class="grid-item set-bg grid-long design" data-setbg="img/projects/K/01.jpg"><a class="img-popup" href="img/projects/K/01.jpg">  </a></div>
-				<!-- portfolio mezraya -->
-				<div class="grid-item set-bg grid-wide design" data-setbg="img/projects/Mezraya/01.jpg"><a class="img-popup" href="img/projects/Mezraya/01.jpg">  </a></div>
-				<!-- portfolio dakar -->
-				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/01.jpg"><a class="img-popup" href="img/projects/dakar/01.jpg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/02.jpg"><a class="img-popup" href="img/projects/dakar/02.jpg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/03.jpg"><a class="img-popup" href="img/projects/dakar/03.jpg">  </a></div>
-				<div class="grid-item set-bg  design" data-setbg="img/projects/dakar/04.jpg"><a class="img-popup" href="img/projects/dakar/04.jpg">  </a></div>
-				<!-- portfolio Nuage -->
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/001.PNG"><a class="img-popup" href="img/projects/Nuage/001.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/01.PNG"><a class="img-popup" href="img/projects/Nuage/01.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/002.PNG"><a class="img-popup" href="img/projects/Nuage/002.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/02.PNG"><a class="img-popup" href="img/projects/Nuage/02.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/003.PNG"><a class="img-popup" href="img/projects/Nuage/003.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/03.PNG"><a class="img-popup" href="img/projects/Nuage/03.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/004.PNG"><a class="img-popup" href="img/projects/Nuage/004.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/04.PNG"><a class="img-popup" href="img/projects/Nuage/04.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/005.PNG"><a class="img-popup" href="img/projects/Nuage/005.PNG">  </a></div>
-				<div class="grid-item set-bg  chan" data-setbg="img/projects/Nuage/05.PNG"><a class="img-popup" href="img/projects/Nuage/05.PNG">  </a></div>
+                
+                <?php foreach ($portfolioImages as $index => $image): 
+                    // Déterminer la classe de filtrage selon la catégorie
+                    $filterClass = $image['category']; // Utiliser directement le nom de la catégorie comme classe
+                    
+                    // Ajouter classes supplémentaires pour certaines images (tous les 5 items)
+                    $specialClass = "";
+                    if ($index % 5 == 0) $specialClass = "grid-wide";
+                    else if ($index % 7 == 0) $specialClass = "grid-long";
+                ?>
+                <div class="grid-item set-bg <?php echo $specialClass . ' ' . $filterClass; ?>" data-setbg="<?php echo $image['path']; ?>">
+                    <a class="img-popup" href="<?php echo $image['path']; ?>"></a>
+                </div>
+                <?php endforeach; ?>
 			</div>
 		</div>
 		<div class="container">
 			<div class="pagination">
-				<a href="#">01</a>
-				<a href="" class="active">02</a>
-				<a href="">03</a>
+				<a href="#" class="active">01</a>
 			</div>
 		</div>
 	</div>
 	<!-- Page section end -->
 
 
-<?php include "footer.php"; ?> 
+<?php include "footer.php"; ?>
