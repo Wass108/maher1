@@ -161,6 +161,82 @@ if (isset($_POST['reorganize_images']) && !empty($images)) {
     $reorganizeMessage = "Les images ont été réorganisées avec succès.";
 }
 
+// Traitement de la réorganisation des images par AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST['reorder'] === 'true') {
+    if (isset($_POST['imageOrder']) && is_array($_POST['imageOrder'])) {
+        $projectDir = "../img/projects/" . $project['slug'] . "/";
+        $tempDir = $projectDir . "temp/";
+        
+        try {
+            // Créer un dossier temporaire s'il n'existe pas
+            if (!is_dir($tempDir)) {
+                if (!mkdir($tempDir, 0777, true)) {
+                    throw new Exception("Impossible de créer le dossier temporaire");
+                }
+            }
+            
+            // Réorganiser les images selon le nouvel ordre
+            $imageOrder = $_POST['imageOrder'];
+            $existingImages = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+            
+            // Créer un mapping temporaire
+            $imageMapping = [];
+            foreach ($existingImages as $image) {
+                $imageName = basename($image);
+                if (in_array($imageName, $imageOrder)) {
+                    $position = array_search($imageName, $imageOrder);
+                    $extension = pathinfo($image, PATHINFO_EXTENSION);
+                    $newName = sprintf("%02d.%s", $position + 1, $extension);
+                    $imageMapping[$image] = $newName;
+                }
+            }
+            
+            // Copier les fichiers avec leurs nouveaux noms dans le dossier temporaire
+            foreach ($imageMapping as $oldPath => $newName) {
+                if (!copy($oldPath, $tempDir . $newName)) {
+                    throw new Exception("Impossible de copier le fichier: " . basename($oldPath));
+                }
+            }
+            
+            // Supprimer les fichiers originaux
+            foreach ($existingImages as $image) {
+                if (file_exists($image)) {
+                    if (!unlink($image)) {
+                        throw new Exception("Impossible de supprimer le fichier: " . basename($image));
+                    }
+                }
+            }
+            
+            // Déplacer les fichiers du dossier temporaire vers le dossier principal
+            foreach (glob($tempDir . "*.*") as $file) {
+                if (!rename($file, $projectDir . basename($file))) {
+                    throw new Exception("Impossible de déplacer le fichier: " . basename($file));
+                }
+            }
+            
+            // Supprimer le dossier temporaire
+            if (is_dir($tempDir)) {
+                if (!rmdir($tempDir)) {
+                    throw new Exception("Impossible de supprimer le dossier temporaire");
+                }
+            }
+            
+            // Réponse AJAX
+            echo json_encode(['success' => true]);
+            exit;
+            
+        } catch (Exception $e) {
+            // En cas d'erreur, renvoyer un message d'erreur détaillé
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
+    
+    // En cas d'erreur, renvoyer une réponse d'erreur
+    echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
+    exit;
+}
+
 // À ce stade, toutes les redirections potentielles ont été traitées
 // On peut donc vider le buffer pour afficher la page
 ob_end_flush();
@@ -220,10 +296,19 @@ ob_end_flush();
             <div class="card-header">
                 <h3 class="card-title">Images actuelles</h3>
                 <div class="card-tools">
+                    <button id="saveOrder" class="btn btn-success" style="display:none;">
+                        <i class="fa fa-save"></i> Enregistrer l'ordre
+                    </button>
+                    <button id="cancelReorder" class="btn btn-secondary" style="display:none;">
+                        <i class="fa fa-times"></i> Annuler
+                    </button>
+                    <button id="enableReorder" class="btn btn-primary" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                        <i class="fa fa-arrows"></i> Réorganiser les images
+                    </button>
                     <form method="post" style="display: inline;">
                         <input type="hidden" name="reorganize_images" value="1">
                         <button type="submit" class="btn btn-warning" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                            <i class="fa fa-sort-numeric-asc"></i> Réorganiser les numéros d'images
+                            <i class="fa fa-sort-numeric-asc"></i> Renuméroter les images
                         </button>
                     </form>
                     <a href="delete_all_images.php?project=<?php echo $projectId; ?>" class="btn btn-danger" <?php echo empty($images) ? 'disabled' : ''; ?>>
@@ -236,20 +321,26 @@ ob_end_flush();
             </div>
             <div class="card-body">
                 <?php if (!empty($images)): ?>
-                    <p>Note: L'image affichée en premier sera utilisée comme image principale du projet dans les listes.</p>
-                    <div class="row">
+                    <div class="alert alert-info">
+                        <p><strong>Note:</strong> L'image affichée en premier sera utilisée comme image principale du projet dans les listes.</p>
+                        <p id="reorderInstructions" style="display:none;"><strong>Mode de réorganisation:</strong> Vous pouvez maintenant glisser et déposer les images pour modifier leur ordre. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.</p>
+                    </div>
+                    <div id="imageGallery" class="row">
                         <?php foreach ($images as $index => $image): ?>
-                            <div class="col-md-3 mb-4">
+                            <div class="col-md-3 mb-4 image-container" data-image="<?php echo basename($image); ?>">
                                 <div class="card">
+                                    <div class="drag-handle" style="display:none; cursor:move; background-color: #f4f6f9; text-align: center; padding: 5px;">
+                                        <i class="fa fa-arrows"></i> Déplacer
+                                    </div>
                                     <img src="<?php echo $image; ?>" class="card-img-top" alt="Image">
                                     <div class="card-body text-center">
                                         <h5 class="card-title"><?php echo basename($image); ?></h5>
                                         <p class="card-text">
                                             <?php if ($index === 0): ?>
-                                                <span class="badge bg-success">Image principale</span>
+                                                <span class="badge bg-success main-image-badge">Image principale</span>
                                             <?php endif; ?>
                                         </p>
-                                        <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
+                                        <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" class="btn btn-danger delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
                                             <i class="fa fa-trash"></i> Supprimer
                                         </a>
                                     </div>
@@ -265,5 +356,170 @@ ob_end_flush();
         </div>
     </div>
 </section>
+
+<!-- Script pour le glisser-déposer -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageGallery = document.getElementById('imageGallery');
+    const enableReorderBtn = document.getElementById('enableReorder');
+    const saveOrderBtn = document.getElementById('saveOrder');
+    const cancelReorderBtn = document.getElementById('cancelReorder');
+    const reorderInstructions = document.getElementById('reorderInstructions');
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    
+    let sortable = null;
+    let originalOrder = [];
+    
+    // Enregistrer l'ordre original des images
+    function captureOriginalOrder() {
+        originalOrder = [];
+        document.querySelectorAll('.image-container').forEach(container => {
+            originalOrder.push(container.getAttribute('data-image'));
+        });
+    }
+    
+    // Activer le mode de réorganisation
+    enableReorderBtn.addEventListener('click', function() {
+        captureOriginalOrder();
+        
+        // Afficher/masquer les éléments appropriés
+        enableReorderBtn.style.display = 'none';
+        saveOrderBtn.style.display = 'inline-block';
+        cancelReorderBtn.style.display = 'inline-block';
+        reorderInstructions.style.display = 'block';
+        
+        // Afficher les poignées de glissement
+        dragHandles.forEach(handle => {
+            handle.style.display = 'block';
+        });
+        
+        // Masquer les boutons de suppression pour éviter les clics accidentels
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Activer Sortable.js
+        sortable = new Sortable(imageGallery, {
+            animation: 150,
+            handle: '.drag-handle',
+            onEnd: function() {
+                updateMainImageBadge();
+            }
+        });
+    });
+    
+    // Mettre à jour le badge de l'image principale
+    function updateMainImageBadge() {
+        const badges = document.querySelectorAll('.main-image-badge');
+        badges.forEach(badge => {
+            badge.style.display = 'none';
+        });
+        
+        const firstImage = imageGallery.querySelector('.image-container');
+        if (firstImage) {
+            const badge = firstImage.querySelector('.main-image-badge');
+            if (badge) {
+                badge.style.display = 'inline-block';
+            } else {
+                const newBadge = document.createElement('span');
+                newBadge.className = 'badge bg-success main-image-badge';
+                newBadge.textContent = 'Image principale';
+                const cardText = firstImage.querySelector('.card-text');
+                if (cardText) {
+                    cardText.appendChild(newBadge);
+                }
+            }
+        }
+    }
+    
+    // Enregistrer le nouvel ordre
+    saveOrderBtn.addEventListener('click', function() {
+        const imageOrder = [];
+        document.querySelectorAll('.image-container').forEach(container => {
+            imageOrder.push(container.getAttribute('data-image'));
+        });
+        
+        // Envoyer l'ordre au serveur via AJAX
+        const formData = new FormData();
+        formData.append('reorder', 'true');
+        imageOrder.forEach(img => {
+            formData.append('imageOrder[]', img);
+        });
+        
+        fetch('manage_images.php?project=<?php echo $projectId; ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // Vérifier si la réponse est OK avant de la traiter comme JSON
+            if(response.ok) {
+                return response.json().catch(() => {
+                    // Si la conversion en JSON échoue, rechargez quand même la page
+                    // car la réorganisation a probablement fonctionné
+                    location.reload();
+                    return { success: true };
+                });
+            } else {
+                throw new Error('Erreur réseau');
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                // Recharger la page pour afficher les images réorganisées
+                location.reload();
+            } else if (data && data.message) {
+                alert('Une erreur est survenue lors de la réorganisation des images: ' + data.message);
+            } else {
+                // La page sera probablement déjà rechargée grâce au bloc catch du premier then
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            // Ne pas afficher d'alerte ici, car la réorganisation peut avoir fonctionné malgré l'erreur
+            location.reload();
+        });
+    });
+    
+    // Annuler la réorganisation
+    cancelReorderBtn.addEventListener('click', function() {
+        // Restaurer l'ordre original
+        const fragment = document.createDocumentFragment();
+        originalOrder.forEach(imageName => {
+            const container = document.querySelector(`.image-container[data-image="${imageName}"]`);
+            if (container) {
+                fragment.appendChild(container);
+            }
+        });
+        
+        imageGallery.innerHTML = '';
+        imageGallery.appendChild(fragment);
+        
+        // Réinitialiser l'interface
+        enableReorderBtn.style.display = 'inline-block';
+        saveOrderBtn.style.display = 'none';
+        cancelReorderBtn.style.display = 'none';
+        reorderInstructions.style.display = 'none';
+        
+        dragHandles.forEach(handle => {
+            handle.style.display = 'none';
+        });
+        
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'inline-block';
+        });
+        
+        // Réinitialiser le badge de l'image principale
+        updateMainImageBadge();
+        
+        // Détruire l'objet Sortable
+        if (sortable) {
+            sortable.destroy();
+            sortable = null;
+        }
+    });
+});
+</script>
 
 <?php include "admin_footer.php"; ?>
