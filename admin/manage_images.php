@@ -35,9 +35,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
         mkdir($projectDir, 0777, true);
     }
     
-    // Récupérer les images existantes pour déterminer le prochain numéro
+    // Récupérer les images existantes
     $existingImages = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
-    $nextNumber = count($existingImages) + 1;
+    
+    // Déterminer les numéros déjà utilisés
+    $usedNumbers = [];
+    foreach ($existingImages as $image) {
+        $filename = basename($image);
+        // Extrait le numéro de l'image (ex: "01.jpg" -> 1)
+        if (preg_match('/^(\d+)\./', $filename, $matches)) {
+            $usedNumbers[] = (int)$matches[1];
+        }
+    }
+    
+    // Trier les numéros utilisés
+    sort($usedNumbers);
+    
+    // Fonction pour trouver le prochain numéro disponible
+    function findNextAvailableNumber($usedNumbers) {
+        $nextNumber = 1; // On commence à 1
+        foreach ($usedNumbers as $number) {
+            if ($number == $nextNumber) {
+                $nextNumber++;
+            } else {
+                // On a trouvé un trou dans la séquence
+                break;
+            }
+        }
+        return $nextNumber;
+    }
     
     $uploadCount = 0;
     $errorCount = 0;
@@ -51,12 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
             // Vérifier si c'est une image
             if (strpos($fileType, 'image/') === 0) {
                 $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                
+                // Trouver le prochain numéro disponible
+                $nextNumber = findNextAvailableNumber($usedNumbers);
+                $usedNumbers[] = $nextNumber; // Ajouter ce numéro à la liste des utilisés
+                sort($usedNumbers); // Retrier la liste
+                
                 $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
                 $destination = $projectDir . $newFileName;
                 
                 if (move_uploaded_file($tmp_name, $destination)) {
                     $uploadCount++;
-                    $nextNumber++;
                 } else {
                     $errorCount++;
                 }
@@ -74,11 +105,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
     }
 }
 
-// Récupérer les images du projet
+// Récupérer les images du projet et les trier par nom de fichier (pour assurer l'ordre numérique)
 $projectDir = "../img/projects/" . $project['slug'] . "/";
 $images = [];
 if (is_dir($projectDir)) {
     $images = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+    
+    // Trier les images par nom de fichier pour maintenir l'ordre numérique
+    usort($images, function($a, $b) {
+        return strnatcmp(basename($a), basename($b));
+    });
+}
+
+// Ajouter un bouton pour réorganiser les images
+$reorganizeMessage = '';
+if (isset($_POST['reorganize_images']) && !empty($images)) {
+    // Réorganiser les images avec une numérotation consécutive
+    $tempDir = $projectDir . "temp/";
+    if (!is_dir($tempDir)) {
+        mkdir($tempDir, 0777, true);
+    }
+    
+    // Déplacer temporairement les images avec de nouveaux noms
+    $counter = 1;
+    $imageMapping = [];
+    foreach ($images as $image) {
+        $extension = pathinfo($image, PATHINFO_EXTENSION);
+        $newName = sprintf("%02d.%s", $counter, $extension);
+        $imageMapping[$image] = $newName;
+        copy($image, $tempDir . $newName);
+        $counter++;
+    }
+    
+    // Supprimer les images originales
+    foreach ($images as $image) {
+        if (file_exists($image)) {
+            unlink($image);
+        }
+    }
+    
+    // Déplacer les images réorganisées vers le dossier principal
+    foreach ($imageMapping as $oldPath => $newName) {
+        rename($tempDir . $newName, $projectDir . $newName);
+    }
+    
+    // Supprimer le dossier temporaire
+    rmdir($tempDir);
+    
+    // Mettre à jour la liste des images
+    $images = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+    usort($images, function($a, $b) {
+        return strnatcmp(basename($a), basename($b));
+    });
+    
+    $reorganizeMessage = "Les images ont été réorganisées avec succès.";
 }
 
 // À ce stade, toutes les redirections potentielles ont été traitées
@@ -111,6 +191,12 @@ ob_end_flush();
         <?php if (!empty($message)): ?>
             <div class="alert alert-success"><?php echo $message; ?></div>
         <?php endif; ?>
+        <?php if (!empty($reorganizeMessage)): ?>
+            <div class="alert alert-success"><?php echo $reorganizeMessage; ?></div>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+        <?php endif; ?>
         
         <div class="card">
             <div class="card-header">
@@ -134,6 +220,15 @@ ob_end_flush();
             <div class="card-header">
                 <h3 class="card-title">Images actuelles</h3>
                 <div class="card-tools">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="reorganize_images" value="1">
+                        <button type="submit" class="btn btn-warning" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                            <i class="fa fa-sort-numeric-asc"></i> Réorganiser les numéros d'images
+                        </button>
+                    </form>
+                    <a href="delete_all_images.php?project=<?php echo $projectId; ?>" class="btn btn-danger" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                        <i class="fa fa-trash"></i> Supprimer toutes les images
+                    </a>
                     <a href="edit_project.php?id=<?php echo $projectId; ?>" class="btn btn-info">
                         <i class="fa fa-pencil"></i> Modifier le projet
                     </a>
