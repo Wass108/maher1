@@ -97,12 +97,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
         }
     }
     
+    // Préparer les messages pour la session
     if ($uploadCount > 0) {
-        $message = "$uploadCount image(s) téléchargée(s) avec succès.";
+        $_SESSION['message'] = "$uploadCount image(s) téléchargée(s) avec succès.";
     }
     if ($errorCount > 0) {
-        $error = "$errorCount image(s) n'ont pas pu être téléchargées.";
+        $_SESSION['error'] = "$errorCount image(s) n'ont pas pu être téléchargées.";
     }
+    
+    // Rediriger pour éviter la résoumission du formulaire
+    header("Location: manage_images.php?project=" . $projectId);
+    exit;
 }
 
 // Récupérer les images du projet et les trier par nom de fichier (pour assurer l'ordre numérique)
