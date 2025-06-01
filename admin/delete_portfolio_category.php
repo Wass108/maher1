@@ -1,0 +1,162 @@
+<?php
+// Inclure les fichiers nécessaires
+include "../connect/connect.php";
+include "admin_header_buffered.php";
+
+// Fonction pour récupérer dynamiquement toutes les catégories existantes
+function getExistingCategories($portfolioMainDir) {
+    $categories = [];
+    
+    if (is_dir($portfolioMainDir)) {
+        $items = scandir($portfolioMainDir);
+        
+        foreach ($items as $item) {
+            // Ignorer les dossiers système et les fichiers
+            if ($item !== '.' && $item !== '..' && is_dir($portfolioMainDir . $item)) {
+                $categories[] = $item;
+            }
+        }
+        
+        // Trier les catégories par ordre alphabétique
+        sort($categories);
+    }
+    
+    return $categories;
+}
+
+$portfolioMainDir = "../img/portfolio/";
+
+// Récupérer dynamiquement toutes les catégories existantes
+$categories = getExistingCategories($portfolioMainDir);
+
+// Vérifier la catégorie
+if (!isset($_GET['category']) || !in_array($_GET['category'], $categories)) {
+    $_SESSION['error'] = "Catégorie invalide ou introuvable.";
+    header("Location: portfolio.php");
+    exit;
+}
+
+$category = $_GET['category'];
+$categoryDir = $portfolioMainDir . $category . "/";
+
+// Traitement de la suppression
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
+    $deletedCount = 0;
+    $folderDeleted = false;
+    
+    if (is_dir($categoryDir)) {
+        // Supprimer toutes les images dans le dossier
+        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        
+        foreach ($images as $image) {
+            if (is_file($image)) {
+                if (unlink($image)) {
+                    $deletedCount++;
+                }
+            }
+        }
+        
+        // Supprimer également tous les autres fichiers qui pourraient être présents
+        $allFiles = glob($categoryDir . "*");
+        foreach ($allFiles as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        
+        // Supprimer le dossier lui-même
+        if (rmdir($categoryDir)) {
+            $folderDeleted = true;
+        }
+    }
+    
+    if ($deletedCount > 0 && $folderDeleted) {
+        $_SESSION['message'] = "La catégorie '$category' a été supprimée avec succès. $deletedCount image(s) supprimée(s) et le dossier a été supprimé.";
+    } elseif ($deletedCount > 0) {
+        $_SESSION['message'] = "$deletedCount image(s) supprimée(s) de la catégorie $category, mais le dossier n'a pas pu être supprimé.";
+    } elseif ($folderDeleted) {
+        $_SESSION['message'] = "Le dossier de la catégorie '$category' a été supprimé (aucune image trouvée).";
+    } else {
+        $_SESSION['message'] = "Aucune image trouvée dans la catégorie $category et le dossier n'existait pas.";
+    }
+    
+    // Rediriger vers la page portfolio
+    header("Location: portfolio.php");
+    exit;
+} else {
+    // Afficher la page de confirmation
+    
+    // Récupérer le nombre d'images
+    $imageCount = 0;
+    if (is_dir($categoryDir)) {
+        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        $imageCount = count($images);
+    }
+    
+    ob_end_flush();
+?>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Supprimer la catégorie</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="portfolio.php">Portfolio</a></li>
+                    <li class="breadcrumb-item active">Supprimer catégorie</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title">
+                    <i class="fa fa-warning"></i> Confirmation de suppression
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h4><i class="fa fa-exclamation-triangle"></i> Attention !</h4>
+                    <p>Vous êtes sur le point de supprimer <strong>COMPLÈTEMENT</strong> la catégorie <strong><?php echo htmlspecialchars($category); ?></strong>.</p>
+                    <p>Cette action va :</p>
+                    <ul>
+                        <li>Supprimer <strong><?php echo $imageCount; ?> image(s)</strong></li>
+                        <li>Supprimer le <strong>dossier de la catégorie</strong></li>
+                        <li>Supprimer <strong>tout le contenu</strong> lié à cette catégorie</li>
+                    </ul>
+                    <p><strong>Cette action est irréversible !</strong></p>
+                </div>
+                
+                <?php if ($imageCount > 0 || is_dir($categoryDir)): ?>
+                    <p>Êtes-vous sûr de vouloir continuer ?</p>
+                    
+                    <form method="post" class="d-inline">
+                        <input type="hidden" name="confirm_delete" value="1">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Oui, supprimer complètement la catégorie
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <p>Aucune image trouvée et le dossier n'existe pas pour cette catégorie.</p>
+                <?php endif; ?>
+                
+                <a href="portfolio.php" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Annuler
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<?php include "admin_footer.php"; ?>
+
+<?php
+}
+?>

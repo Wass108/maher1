@@ -138,7 +138,10 @@ $recentProjects = $stmtRecentProjects->fetchAll();
                                             <a href="edit_project.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-primary">
                                                 <i class="fa fa-edit"></i> Éditer
                                             </a>
-                                            <a href="../project.php?project=<?php echo urlencode($project['slug']); ?>" target="_blank" class="btn btn-sm btn-info">
+                                            <a href="manage_images.php?project=<?php echo $project['id']; ?>" class="btn btn-sm btn-info">
+                                                <i class="fa fa-images"></i> Images
+                                            </a>
+                                            <a href="../project.php?project=<?php echo urlencode($project['slug']); ?>" target="_blank" class="btn btn-sm btn-success">
                                                 <i class="fa fa-eye"></i> Voir
                                             </a>
                                         </td>
