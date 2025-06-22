@@ -170,74 +170,106 @@ if (isset($_POST['reorganize_images']) && !empty($images)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST['reorder'] === 'true') {
     if (isset($_POST['imageOrder']) && is_array($_POST['imageOrder'])) {
         $projectDir = "../img/projects/" . $project['slug'] . "/";
-        $tempDir = $projectDir . "temp/";
+        $tempDir = $projectDir . "temp_reorder/";
         
         try {
-            // Créer un dossier temporaire s'il n'existe pas
-            if (!is_dir($tempDir)) {
-                if (!mkdir($tempDir, 0777, true)) {
-                    throw new Exception("Impossible de créer le dossier temporaire");
+            // Nettoyer et créer un dossier temporaire unique
+            if (is_dir($tempDir)) {
+                // Supprimer le contenu du dossier temporaire s'il existe
+                $files = glob($tempDir . '*');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
                 }
+                rmdir($tempDir);
             }
             
-            // Réorganiser les images selon le nouvel ordre
-            $imageOrder = $_POST['imageOrder'];
+            if (!mkdir($tempDir, 0777, true)) {
+                throw new Exception("Impossible de créer le dossier temporaire");
+            }
+            
+            // Récupérer les images existantes
             $existingImages = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+            $imageOrder = $_POST['imageOrder'];
             
-            // Créer un mapping temporaire
-            $imageMapping = [];
-            foreach ($existingImages as $image) {
-                $imageName = basename($image);
-                if (in_array($imageName, $imageOrder)) {
-                    $position = array_search($imageName, $imageOrder);
-                    $extension = pathinfo($image, PATHINFO_EXTENSION);
-                    $newName = sprintf("%02d.%s", $position + 1, $extension);
-                    $imageMapping[$image] = $newName;
+            // Créer un mapping des images existantes par nom de fichier
+            $imageFiles = [];
+            foreach ($existingImages as $imagePath) {
+                $imageName = basename($imagePath);
+                $imageFiles[$imageName] = $imagePath;
+            }
+            
+            // Vérifier que toutes les images demandées existent
+            foreach ($imageOrder as $imageName) {
+                if (!isset($imageFiles[$imageName])) {
+                    throw new Exception("Image non trouvée: " . $imageName);
                 }
             }
             
-            // Copier les fichiers avec leurs nouveaux noms dans le dossier temporaire
-            foreach ($imageMapping as $oldPath => $newName) {
-                if (!copy($oldPath, $tempDir . $newName)) {
-                    throw new Exception("Impossible de copier le fichier: " . basename($oldPath));
+            // Copier les images dans le dossier temporaire avec les nouveaux noms
+            $counter = 1;
+            $tempMapping = [];
+            foreach ($imageOrder as $imageName) {
+                $originalPath = $imageFiles[$imageName];
+                $extension = pathinfo($originalPath, PATHINFO_EXTENSION);
+                $newName = sprintf("%02d.%s", $counter, $extension);
+                $tempPath = $tempDir . $newName;
+                
+                if (!copy($originalPath, $tempPath)) {
+                    throw new Exception("Impossible de copier l'image: " . $imageName);
                 }
+                
+                $tempMapping[$newName] = $tempPath;
+                $counter++;
             }
             
-            // Supprimer les fichiers originaux
+            // Supprimer tous les fichiers originaux
             foreach ($existingImages as $image) {
                 if (file_exists($image)) {
                     if (!unlink($image)) {
-                        throw new Exception("Impossible de supprimer le fichier: " . basename($image));
+                        throw new Exception("Impossible de supprimer l'image originale: " . basename($image));
                     }
                 }
             }
             
-            // Déplacer les fichiers du dossier temporaire vers le dossier principal
-            foreach (glob($tempDir . "*.*") as $file) {
-                if (!rename($file, $projectDir . basename($file))) {
-                    throw new Exception("Impossible de déplacer le fichier: " . basename($file));
+            // Déplacer les images du dossier temporaire vers le dossier principal
+            foreach ($tempMapping as $newName => $tempPath) {
+                $finalPath = $projectDir . $newName;
+                if (!rename($tempPath, $finalPath)) {
+                    throw new Exception("Impossible de déplacer l'image: " . $newName);
                 }
             }
             
             // Supprimer le dossier temporaire
             if (is_dir($tempDir)) {
-                if (!rmdir($tempDir)) {
-                    throw new Exception("Impossible de supprimer le dossier temporaire");
-                }
+                rmdir($tempDir);
             }
             
-            // Réponse AJAX
-            echo json_encode(['success' => true]);
+            // Réponse AJAX de succès
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Images réorganisées avec succès']);
             exit;
             
         } catch (Exception $e) {
-            // En cas d'erreur, renvoyer un message d'erreur détaillé
+            // Nettoyer en cas d'erreur
+            if (is_dir($tempDir)) {
+                $files = glob($tempDir . '*');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
+                rmdir($tempDir);
+            }
+            
+            header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             exit;
         }
     }
     
-    // En cas d'erreur, renvoyer une réponse d'erreur
+    header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
     exit;
 }

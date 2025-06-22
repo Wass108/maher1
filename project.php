@@ -22,6 +22,12 @@ $projectFolder = "img/projects/" . $projectSlug . "/";
 
 // Récupérer toutes les images du dossier (formats jpg, jpeg, png, gif)
 $imagesFromFolder = glob($projectFolder . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+
+// Trier les images par nom de fichier pour maintenir l'ordre numérique (même logique que dans l'admin)
+usort($imagesFromFolder, function($a, $b) {
+    return strnatcmp(basename($a), basename($b));
+});
+
 $images = array_map(function($path) {
     // Remplacer les espaces par %20 dans les chemins d'images pour l'URL
     return ['image_path' => str_replace(' ', '%20', $path)];

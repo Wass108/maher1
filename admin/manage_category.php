@@ -218,9 +218,15 @@ ob_end_flush();
                 </h3>
                 <div class="card-tools">
                     <?php if ($totalImages > 0): ?>
-                        <a href="delete_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
-                           class="btn btn-danger btn-sm">
+                        <a href="empty_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
+                           class="btn btn-warning btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Toutes les images seront supprimées mais la catégorie restera.');">
                             <i class="fa fa-trash"></i> Vider la catégorie
+                        </a>
+                        <a href="delete_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer complètement cette catégorie ? Le dossier et toutes les images seront supprimés.');">
+                            <i class="fa fa-times"></i> Supprimer la catégorie
                         </a>
                     <?php endif; ?>
                 </div>

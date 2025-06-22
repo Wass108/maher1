@@ -38,10 +38,15 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div id="projects-carousel" class="projects-slider">
             <?php foreach ($projects as $project): ?>
                 <?php
-                    // Définir le dossier du projet en se basant sur le slug
+                    // Définir le dossier du projet en se basé sur le slug
                     $projectFolder = "img/projects/" . $project['slug'] . "/";
                     // Récupérer toutes les images du dossier (formats jpg, jpeg, png, gif)
                     $imagesFromFolder = glob($projectFolder . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+                    
+                    // Trier les images par nom de fichier pour maintenir l'ordre numérique (même logique que dans l'admin)
+                    usort($imagesFromFolder, function($a, $b) {
+                        return strnatcmp(basename($a), basename($b));
+                    });
                     
                     // Traiter le chemin d'image s'il existe
                     $imagePath = 'img/default.jpg';

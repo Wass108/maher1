@@ -231,8 +231,11 @@ ob_end_flush();
                         <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-success btn-sm">
                             <i class="fa fa-plus"></i> Ajouter des images
                         </a>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="deleteAllCategory('<?php echo htmlspecialchars($category); ?>')">
+                        <button type="button" class="btn btn-warning btn-sm" onclick="emptyCategory('<?php echo htmlspecialchars($category); ?>')">
                             <i class="fa fa-trash"></i> Vider la catégorie
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllCategory('<?php echo htmlspecialchars($category); ?>')">
+                            <i class="fa fa-times"></i> Supprimer la catégorie
                         </button>
                     </div>
                 </div>
@@ -275,6 +278,12 @@ ob_end_flush();
 function deleteAllCategory(category) {
     if (confirm('Êtes-vous sûr de vouloir supprimer TOUTES les images de la catégorie "' + category + '" ? Cette action est irréversible.')) {
         window.location.href = 'delete_portfolio_category.php?category=' + encodeURIComponent(category);
+    }
+}
+
+function emptyCategory(category) {
+    if (confirm('Êtes-vous sûr de vouloir vider la catégorie "' + category + '" ? Toutes les images seront supprimées, mais la catégorie restera.')) {
+        window.location.href = 'empty_portfolio_category.php?category=' + encodeURIComponent(category);
     }
 }
 </script>
