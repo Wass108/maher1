@@ -42,63 +42,94 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - Administration BYM</title>
-    <link rel="stylesheet" href="../css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding-top: 50px;
-        }
-        .login-container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 40px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .login-logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .login-logo img {
-            max-width: 150px;
-        }
-        .btn-primary {
-            width: 100%;
-            font-weight: bold;
-        }
-        .error-message {
-            color: #dc3545;
-            margin-bottom: 15px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <div class="login-container">
-            <div class="login-logo">
-                <img src="../img/logo.png" alt="BYM Logo">
+<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    
+    <div class="w-full max-w-md">
+        <!-- Carte de connexion -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            
+            <!-- En-tête avec logo -->
+            <div class="bg-gray-900 px-8 py-12 text-center">
+                <div class="mb-4">
+                    <img src="../img/logo.png" alt="BYM Logo" class="mx-auto h-16 w-auto">
+                </div>
+                <h1 class="text-2xl font-light text-white tracking-wide">ADMINISTRATION</h1>
+                <p class="text-gray-300 text-sm mt-2">Espace de gestion BYM</p>
             </div>
-            <h3 class="text-center mb-4">Administration</h3>
-            
-            <?php if(!empty($error)): ?>
-                <div class="error-message text-center"><?php echo $error; ?></div>
-            <?php endif; ?>
-            
-            <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
-                <div class="form-group mb-3">
-                    <label for="username">Nom d'utilisateur</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
-                </div>
-                <div class="form-group mb-3">
-                    <label for="password">Mot de passe</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <div class="form-group mb-3">
-                    <button type="submit" class="btn btn-primary">Se connecter</button>
-                </div>
-            </form>
+
+            <!-- Contenu du formulaire -->
+            <div class="px-8 py-8">
+                
+                <!-- Message d'erreur -->
+                <?php if(!empty($error)): ?>
+                    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700"><?php echo htmlspecialchars($error); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Formulaire -->
+                <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" class="space-y-6">
+                    
+                    <!-- Nom d'utilisateur -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nom d'utilisateur
+                        </label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors duration-200"
+                            placeholder="Votre nom d'utilisateur"
+                        >
+                    </div>
+
+                    <!-- Mot de passe -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Mot de passe
+                        </label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors duration-200"
+                            placeholder="Votre mot de passe"
+                        >
+                    </div>
+
+                    <!-- Bouton de connexion -->
+                    <div class="pt-4">
+                        <button 
+                            type="submit" 
+                            class="w-full bg-gray-900 text-white py-3 px-4 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors duration-200 font-medium"
+                        >
+                            Se connecter
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pied de page -->
+            <div class="px-8 py-4 bg-gray-50 border-t border-gray-200">
+                <p class="text-xs text-gray-500 text-center">
+                    © 2025 Tous droits réservés.
+                </p>
+            </div>
         </div>
     </div>
+
 </body>
 </html>

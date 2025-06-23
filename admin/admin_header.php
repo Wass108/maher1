@@ -1,6 +1,5 @@
 <?php 
 include 'auth_check.php'; 
-// Ne pas mettre d'affichage HTML ici 
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -8,123 +7,115 @@ include 'auth_check.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration BYM</title>
-    <link rel="stylesheet" href="../css/bootstrap.min.css">
-    <link rel="stylesheet" href="../css/font-awesome.min.css">
-    <style>
-        body {
-            padding-top: 56px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'slide-down': 'slideDown 0.2s ease-out',
+                        'fade-in': 'fadeIn 0.15s ease-in',
+                    },
+                    keyframes: {
+                        slideDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
         }
-        .sidebar {
-            min-height: calc(100vh - 56px);
-            background-color: #343a40;
-            color: white;
-            padding-top: 20px;
-        }
-        .sidebar a {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 10px 15px;
-            display: block;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .sidebar a:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar a.active {
-            color: #fff;
-            background-color: #007bff;
-        }
-        .sidebar a i {
-            margin-right: 10px;
-        }
-        .content {
-            flex: 1;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .content-header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
-        }
-        .table td img {
-            max-width: 50px;
-            max-height: 50px;
-            object-fit: cover;
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.php">BYM Admin</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../index.php" target="_blank">Voir le site</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <?php echo $_SESSION['admin_username']; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="profile.php">Profil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="logout.php">Déconnexion</a></li>
-                        </ul>
-                    </li>
-                </ul>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white border-b border-gray-200 fixed w-full z-30 top-0">
+        <div class="px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <img src="../img/logo.png" alt="BYM Logo" class="h-8 w-auto mr-3">
+                        <h1 class="text-xl font-bold text-gray-900">BYM Admin</h1>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="../index.php" target="_blank" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors duration-200">
+                        <i class="fas fa-external-link-alt mr-2"></i>
+                        Voir le site
+                    </a>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded-md px-3 py-2 transition-colors duration-200">
+                            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-gray-600 text-sm"></i>
+                            </div>
+                            <span><?php echo htmlspecialchars($_SESSION['admin_username']); ?></span>
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        
+                        <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none" style="display: none;">
+                            <a href="profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                <i class="fas fa-user-circle mr-2"></i>
+                                Mon profil
+                            </a>
+                            <hr class="my-1">
+                            <a href="logout.php" class="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors duration-150">
+                                <i class="fas fa-sign-out-alt mr-2"></i>
+                                Déconnexion
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button type="button" class="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500 p-2" x-data="{ open: false }" @click="open = !open">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
-
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>" href="dashboard.php">
-                                <i class="fa fa-dashboard"></i> Tableau de bord
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'projects.php' ? 'active' : ''; ?>" href="projects.php">
-                                <i class="fa fa-building"></i> Projets
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'active' : ''; ?>" href="portfolio.php">
-                                <i class="fa fa-image"></i> Portfolio
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'active' : ''; ?>" href="services.php">
-                                <i class="fa fa-cogs"></i> Services
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : ''; ?>" href="users.php">
-                                <i class="fa fa-users"></i> Utilisateurs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>" href="settings.php">
-                                <i class="fa fa-gear"></i> Paramètres
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-gray-200 pt-16 overflow-y-auto">
+        <div class="px-3 py-6">
+            <nav class="space-y-1">
+                <a href="dashboard.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-chart-line <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Tableau de bord
+                </a>
+                
+                <a href="projects.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'projects.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-building <?php echo basename($_SERVER['PHP_SELF']) == 'projects.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Projets
+                </a>
+                
+                <a href="portfolio.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-images <?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Portfolio
+                </a>
+                
+                <a href="services.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-cogs <?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Services
+                </a>
+                
+                <a href="users.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-users <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Utilisateurs
+                </a>
+                
+                <a href="settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
+                    <i class="fas fa-cog <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
+                    Paramètres
+                </a>
             </nav>
-
-            <!-- Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+            <div class="text-center">
+                <p class="text-xs text-gray-400">© 2025 BYM Architecture</p>
+            </div>
+        </div>
+    </div>
+    <div class="pl-64 pt-16">
+        <main class="min-h-screen">

@@ -278,171 +278,264 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
 // On peut donc vider le buffer pour afficher la page
 ob_end_flush();
 ?>
-
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Gestion des images - <?php echo htmlspecialchars($project['title']); ?></h1>
+<div class="bg-white border-b border-gray-200 mb-6">
+    <div class="px-6 py-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Gestion des images</h1>
+                <p class="text-gray-600 mt-1"><?php echo htmlspecialchars($project['title']); ?></p>
             </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><a href="dashboard.php">Accueil</a></li>
-                    <li class="breadcrumb-item"><a href="projects.php">Projets</a></li>
-                    <li class="breadcrumb-item active">Gestion des images</li>
-                </ol>
+            <div class="flex items-center space-x-3">
+                <a href="../project.php?project=<?php echo urlencode($project['slug']); ?>" 
+                   target="_blank"
+                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                    <i class="fas fa-external-link-alt mr-2"></i>
+                    Voir le projet
+                </a>
+                <nav class="flex space-x-2 text-sm">
+                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700">Accueil</a>
+                    <span class="text-gray-400">/</span>
+                    <a href="projects.php" class="text-gray-500 hover:text-gray-700">Projets</a>
+                    <span class="text-gray-400">/</span>
+                    <span class="text-gray-900 font-medium">Images</span>
+                </nav>
             </div>
         </div>
     </div>
 </div>
-
-<section class="content">
-    <div class="container-fluid">
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php endif; ?>
-        <?php if (!empty($message)): ?>
-            <div class="alert alert-success"><?php echo $message; ?></div>
-        <?php endif; ?>
-        <?php if (!empty($reorganizeMessage)): ?>
-            <div class="alert alert-success"><?php echo $reorganizeMessage; ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-        <?php endif; ?>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Ajouter des images</h3>
-            </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    <div class="form-group mb-3">
-                        <label for="images">Sélectionner des images</label>
-                        <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/*">
-                        <small class="form-text text-muted">Vous pouvez sélectionner plusieurs images à la fois.</small>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary">Télécharger</button>
-                    </div>
-                </form>
+<div class="px-6 space-y-6">
+    <?php if (!empty($error)): ?>
+        <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700"><?php echo htmlspecialchars($error); ?></p>
+                </div>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Images actuelles</h3>
-                <div class="card-tools">
-                    <!-- Boutons de sélection multiple (cachés par défaut) -->
-                    <div class="btn-group btn-group-sm" role="group" id="bulk-actions" style="display: none;">
-                        <button type="button" class="btn btn-danger" onclick="deleteSelectedImages()" disabled>
-                            <i class="fa fa-trash"></i> Supprimer sélectionnées (<span id="selected-count">0</span>)
+    <?php endif; ?>
+    <?php if (!empty($message)): ?>
+        <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($message); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($reorganizeMessage)): ?>
+        <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($reorganizeMessage); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Ajouter des images</h3>
+            <p class="text-sm text-gray-600 mt-1">Téléchargez plusieurs images à la fois</p>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
+                        Sélectionner des images
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="images" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                <p class="mb-2 text-sm text-gray-500">
+                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez
+                                </p>
+                                <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
+                            </div>
+                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*">
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                        <i class="fas fa-upload mr-2"></i>
+                        Télécharger les images
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Images actuelles</h3>
+                    <p class="text-sm text-gray-600 mt-1"><?php echo count($images); ?> image(s) • La première image sera utilisée comme image principale</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div id="bulk-actions" class="hidden space-x-2">
+                        <button type="button" onclick="deleteSelectedImages()" disabled
+                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                            <i class="fas fa-trash mr-2"></i>
+                            Supprimer (<span id="selected-count">0</span>)
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="clearSelection()">
-                            <i class="fa fa-times"></i> Annuler
+                        <button type="button" onclick="clearSelection()"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Annuler
                         </button>
                     </div>
-                    
-                    <!-- Boutons normaux -->
-                    <div id="normal-actions">
+                    <div id="normal-actions" class="flex items-center space-x-2">
                         <?php if (!empty($images)): ?>
-                            <button type="button" class="btn btn-info btn-sm" onclick="toggleSelectionMode()">
-                                <i class="fa fa-check-square-o"></i> Sélection multiple
+                            <button type="button" onclick="toggleSelectionMode()"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-check-square mr-2"></i>
+                                Sélection multiple
                             </button>
                         <?php endif; ?>
-                        <button id="saveOrder" class="btn btn-success" style="display:none;">
-                            <i class="fa fa-save"></i> Enregistrer l'ordre
+                        <button id="saveOrder" class="hidden inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
+                            <i class="fas fa-save mr-2"></i>
+                            Enregistrer l'ordre
                         </button>
-                        <button id="cancelReorder" class="btn btn-secondary" style="display:none;">
-                            <i class="fa fa-times"></i> Annuler
+                        <button id="cancelReorder" class="hidden inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Annuler
                         </button>
-                        <button id="enableReorder" class="btn btn-primary" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                            <i class="fa fa-arrows"></i> Réorganiser les images
+                        <button id="enableReorder" <?php echo empty($images) ? 'disabled' : ''; ?>
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                            <i class="fas fa-arrows-alt mr-2"></i>
+                            Réorganiser
                         </button>
-                        <form method="post" style="display: inline;">
+                        <form method="post" class="inline">
                             <input type="hidden" name="reorganize_images" value="1">
-                            <button type="submit" class="btn btn-warning" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                                <i class="fa fa-sort-numeric-asc"></i> Renuméroter les images
+                            <button type="submit" <?php echo empty($images) ? 'disabled' : ''; ?>
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                <i class="fas fa-sort-numeric-down mr-2"></i>
+                                Renuméroter
                             </button>
                         </form>
-                        <a href="delete_all_images.php?project=<?php echo $projectId; ?>" class="btn btn-danger" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                            <i class="fa fa-trash"></i> Supprimer toutes les images
-                        </a>
-                        <a href="edit_project.php?id=<?php echo $projectId; ?>" class="btn btn-info">
-                            <i class="fa fa-pencil"></i> Modifier le projet
+                        
+                        <a href="edit_project.php?id=<?php echo $projectId; ?>"
+                           class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-edit mr-2"></i>
+                            Modifier le projet
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <?php if (!empty($images)): ?>
-                    <!-- Alert zone pour les messages AJAX -->
-                    <div id="ajax-messages"></div>
-                    
-                    <!-- Contrôles de sélection (cachés par défaut) -->
-                    <div class="row mb-3" id="selection-controls" style="display: none;">
-                        <div class="col-12">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-primary" onclick="selectAll()">
-                                    <i class="fa fa-check-square"></i> Tout sélectionner
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary" onclick="selectNone()">
-                                    <i class="fa fa-square-o"></i> Tout désélectionner
-                                </button>
-                                <button type="button" class="btn btn-outline-info" onclick="invertSelection()">
-                                    <i class="fa fa-exchange"></i> Inverser la sélection
-                                </button>
-                            </div>
+        </div>
+        <div class="p-6">
+            <?php if (!empty($images)): ?>
+                <div id="ajax-messages" class="mb-6"></div>
+                <div id="selection-controls" class="hidden mb-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="selectAll()"
+                                class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-check-square mr-1"></i>
+                            Tout sélectionner
+                        </button>
+                        <button type="button" onclick="selectNone()"
+                                class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-square mr-1"></i>
+                            Tout désélectionner
+                        </button>
+                        <button type="button" onclick="invertSelection()"
+                                class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-exchange-alt mr-1"></i>
+                            Inverser
+                        </button>
+                    </div>
+                </div>
+                <div id="reorderInstructions" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Mode de réorganisation:</strong> Glissez et déposez les images pour modifier leur ordre. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.
+                            </p>
                         </div>
                     </div>
-                    
-                    <div class="alert alert-info">
-                        <p><strong>Note:</strong> L'image affichée en premier sera utilisée comme image principale du projet dans les listes.</p>
-                        <p id="reorderInstructions" style="display:none;"><strong>Mode de réorganisation:</strong> Vous pouvez maintenant glisser et déposer les images pour modifier leur ordre. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.</p>
-                    </div>
-                    <div id="imageGallery" class="row">
-                        <?php foreach ($images as $index => $image): ?>
-                            <div class="col-md-3 mb-4 image-container" data-image="<?php echo basename($image); ?>">
-                                <div class="card image-card">
-                                    <!-- Case à cocher (masquée par défaut) -->
-                                    <div class="image-checkbox" style="display: none;">
-                                        <input type="checkbox" class="image-select" value="<?php echo htmlspecialchars(basename($image)); ?>" 
-                                               onchange="updateSelectionCount()">
-                                    </div>
-                                    
-                                    <div class="drag-handle" style="display:none; cursor:move; background-color: #f4f6f9; text-align: center; padding: 5px;">
-                                        <i class="fa fa-arrows"></i> Déplacer
-                                    </div>
-                                    <img src="<?php echo $image; ?>" class="card-img-top" alt="Image">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title"><?php echo basename($image); ?></h5>
-                                        <p class="card-text">
+                </div>
+                <div id="imageGallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <?php foreach ($images as $index => $image): ?>
+                        <div class="image-container relative group" data-image="<?php echo basename($image); ?>">
+                            <div class="image-checkbox absolute top-3 right-3 z-10 hidden">
+                                <input type="checkbox" class="image-select h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                                       value="<?php echo htmlspecialchars(basename($image)); ?>" onchange="updateSelectionCount()">
+                            </div>
+                            <div class="drag-handle hidden cursor-move bg-blue-50 border border-blue-200 text-center py-2 rounded-t-lg">
+                                <i class="fas fa-grip-vertical text-blue-600"></i>
+                                <span class="text-xs text-blue-700 ml-2">Déplacer</span>
+                            </div>
+                            <div class="image-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-16 aspect-h-12 bg-gray-100">
+                                    <img src="<?php echo $image; ?>" 
+                                         alt="Image" 
+                                         class="w-full h-48 object-cover">
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900"><?php echo basename($image); ?></h4>
                                             <?php if ($index === 0): ?>
-                                                <span class="badge bg-success main-image-badge">Image principale</span>
+                                                <span class="main-image-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                                                    <i class="fas fa-star mr-1"></i>
+                                                    Image principale
+                                                </span>
                                             <?php endif; ?>
-                                        </p>
-                                        <div class="image-actions">
-                                            <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" class="btn btn-danger delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
-                                                <i class="fa fa-trash"></i> Supprimer
-                                            </a>
                                         </div>
+                                    </div>
+                                    <div class="image-actions mt-3">
+                                        <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" 
+                                           class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Supprimer
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-images text-gray-400 text-2xl"></i>
                     </div>
-                <?php else: ?>
-                    <p class="text-center">Aucune image n'est disponible pour ce projet.</p>
-                    <p class="text-center">Utilisez le formulaire ci-dessus pour ajouter des images.</p>
-                <?php endif; ?>
-            </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune image</h3>
+                    <p class="text-gray-600 mb-6">Ce projet n'a pas encore d'images. Utilisez le formulaire ci-dessus pour ajouter vos premières images.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
-</section>
-
-<!-- Script pour le glisser-déposer -->
+</div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+
 <script>
 // Variables globales pour éviter les conflits
 let selectionMode = false;
@@ -459,18 +552,14 @@ function toggleSelectionMode() {
     
     if (selectionMode) {
         // Activer le mode sélection
-        $('.image-checkbox').show();
+        $('.image-checkbox').removeClass('hidden');
         $('.image-card').addClass('selection-mode');
-        $('#selection-controls').show();
-        $('#bulk-actions').show();
-        $('#normal-actions').hide();
+        $('#selection-controls').removeClass('hidden');
+        $('#bulk-actions').removeClass('hidden');
+        $('#normal-actions').addClass('hidden');
         
         // Désactiver le bouton de réorganisation pendant la sélection
         $('#enableReorder').prop('disabled', true);
-        
-        // Changer le texte du bouton
-        $('button[onclick="toggleSelectionMode()"]').html('<i class="fa fa-times"></i> Annuler sélection');
-        $('button[onclick="toggleSelectionMode()"]').attr('onclick', 'exitSelectionMode()');
     } else {
         exitSelectionMode();
     }
@@ -480,19 +569,15 @@ function exitSelectionMode() {
     selectionMode = false;
     
     // Désactiver le mode sélection
-    $('.image-checkbox').hide();
+    $('.image-checkbox').addClass('hidden');
     $('.image-card').removeClass('selection-mode selected');
     $('.image-select').prop('checked', false);
-    $('#selection-controls').hide();
-    $('#bulk-actions').hide();
-    $('#normal-actions').show();
+    $('#selection-controls').addClass('hidden');
+     $('#bulk-actions').addClass('hidden');
+     $('#normal-actions').removeClass('hidden');
     
     // Réactiver le bouton de réorganisation
     $('#enableReorder').prop('disabled', false);
-    
-    // Remettre le texte original du bouton
-    $('button[onclick="exitSelectionMode()"]').html('<i class="fa fa-check-square-o"></i> Sélection multiple');
-    $('button[onclick="exitSelectionMode()"]').attr('onclick', 'toggleSelectionMode()');
     
     updateSelectionCount();
 }
@@ -537,9 +622,9 @@ function updateSelectionCount() {
     
     // Activer/désactiver le bouton de suppression
     if (selectedCount > 0) {
-        $('#bulk-actions button.btn-danger').prop('disabled', false);
+        $('#bulk-actions button[onclick="deleteSelectedImages()"]').prop('disabled', false);
     } else {
-        $('#bulk-actions button.btn-danger').prop('disabled', true);
+        $('#bulk-actions button[onclick="deleteSelectedImages()"]').prop('disabled', true);
     }
 }
 
@@ -559,9 +644,9 @@ function deleteSelectedImages() {
     }
     
     // Désactiver le bouton pendant la suppression
-    const deleteButton = $('#bulk-actions button.btn-danger');
+    const deleteButton = $('#bulk-actions button[onclick="deleteSelectedImages()"]');
     const originalText = deleteButton.html();
-    deleteButton.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Suppression...');
+    deleteButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Suppression...');
     
     // Envoyer la requête AJAX
     $.ajax({
@@ -575,10 +660,20 @@ function deleteSelectedImages() {
         dataType: 'json',
         success: function(response) {
             // Afficher le message de résultat
-            let alertClass = response.success ? 'alert-success' : 'alert-danger';
-            let alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${response.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            let alertClass = response.success ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50';
+            let iconClass = response.success ? 'text-green-400' : 'text-red-400';
+            let textClass = response.success ? 'text-green-700' : 'text-red-700';
+            let icon = response.success ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            let alertHtml = `<div class="p-4 border-l-4 ${alertClass} rounded-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas ${icon} ${iconClass}"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm ${textClass}">${response.message}</p>
+                    </div>
+                </div>
             </div>`;
             
             $('#ajax-messages').html(alertHtml);
@@ -612,9 +707,15 @@ function deleteSelectedImages() {
         },
         error: function(xhr, status, error) {
             console.log('Erreur AJAX:', xhr.responseText);
-            $('#ajax-messages').html(`<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                Erreur lors de la suppression des images. Veuillez réessayer.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            $('#ajax-messages').html(`<div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">Erreur lors de la suppression des images. Veuillez réessayer.</p>
+                    </div>
+                </div>
             </div>`);
             
             deleteButton.prop('disabled', false).html(originalText);
@@ -658,11 +759,11 @@ document.addEventListener('DOMContentLoaded', function() {
         captureOriginalOrder();
         
         // Mettre à jour l'interface
-        enableReorderBtn.style.display = 'none';
-        saveOrderBtn.style.display = 'inline-block';
-        cancelReorderBtn.style.display = 'inline-block';
+        enableReorderBtn.classList.add('hidden');
+        saveOrderBtn.classList.remove('hidden');
+        cancelReorderBtn.classList.remove('hidden');
         if (reorderInstructions) {
-            reorderInstructions.style.display = 'block';
+            reorderInstructions.classList.remove('hidden');
         }
         
         // Afficher les poignées de glissement et masquer les boutons de suppression
@@ -671,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const imageCheckboxes = document.querySelectorAll('.image-checkbox');
         
         dragHandles.forEach(handle => {
-            handle.style.display = 'block';
+            handle.classList.remove('hidden');
         });
         
         deleteButtons.forEach(btn => {
@@ -680,7 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // S'assurer que les cases à cocher sont masquées et désactiver le bouton de sélection
         imageCheckboxes.forEach(checkbox => {
-            checkbox.style.display = 'none';
+            checkbox.classList.add('hidden');
         });
         
         // Désactiver le bouton de sélection multiple pendant la réorganisation
@@ -710,12 +811,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (firstImage) {
             const badge = firstImage.querySelector('.main-image-badge');
             if (badge) {
-                badge.style.display = 'inline-block';
+                badge.style.display = 'inline-flex';
             } else {
                 const newBadge = document.createElement('span');
-                newBadge.className = 'badge bg-success main-image-badge';
-                newBadge.textContent = 'Image principale';
-                const cardText = firstImage.querySelector('.card-text');
+                newBadge.className = 'main-image-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1';
+                newBadge.innerHTML = '<i class="fas fa-star mr-1"></i>Image principale';
+                const cardText = firstImage.querySelector('.p-4');
                 if (cardText) {
                     cardText.appendChild(newBadge);
                 }
@@ -732,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Désactiver le bouton pendant l'enregistrement
         saveOrderBtn.disabled = true;
-        saveOrderBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enregistrement...';
+        saveOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
         
         // Envoyer l'ordre au serveur via AJAX
         const formData = new FormData();
@@ -763,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Erreur: ' + data.message);
                 // Réactiver le bouton
                 saveOrderBtn.disabled = false;
-                saveOrderBtn.innerHTML = '<i class="fa fa-save"></i> Enregistrer l\'ordre';
+                saveOrderBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Enregistrer l\'ordre';
             }
         })
         .catch(error => {
@@ -794,11 +895,11 @@ document.addEventListener('DOMContentLoaded', function() {
         imageGallery.appendChild(fragment);
         
         // Réinitialiser l'interface
-        enableReorderBtn.style.display = 'inline-block';
-        saveOrderBtn.style.display = 'none';
-        cancelReorderBtn.style.display = 'none';
+        enableReorderBtn.classList.remove('hidden');
+        saveOrderBtn.classList.add('hidden');
+        cancelReorderBtn.classList.add('hidden');
         if (reorderInstructions) {
-            reorderInstructions.style.display = 'none';
+            reorderInstructions.classList.add('hidden');
         }
         
         // Masquer les poignées et réafficher les boutons
@@ -806,11 +907,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const deleteButtons = document.querySelectorAll('.delete-btn');
         
         dragHandles.forEach(handle => {
-            handle.style.display = 'none';
+            handle.classList.add('hidden');
         });
         
         deleteButtons.forEach(btn => {
-            btn.style.display = 'inline-block';
+            btn.style.display = 'inline-flex';
         });
         
         // Réactiver le bouton de sélection multiple
@@ -844,61 +945,99 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.trigger('change');
     });
     
+    // Gestion du drag and drop pour l'upload
+    const uploadArea = document.querySelector('label[for="images"]');
+    const fileInput = document.getElementById('images');
+    
+    if (uploadArea && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            uploadArea.classList.add('border-blue-400', 'bg-blue-50');
+        }
+        
+        function unhighlight(e) {
+            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            fileInput.files = files;
+            
+            // Optionnel: afficher les noms de fichiers sélectionnés
+            updateFileList(files);
+        }
+        
+        // Mettre à jour l'affichage des fichiers sélectionnés
+        fileInput.addEventListener('change', function() {
+            updateFileList(this.files);
+        });
+        
+        function updateFileList(files) {
+            const uploadText = uploadArea.querySelector('p');
+            if (files.length > 0) {
+                uploadText.innerHTML = `<span class="font-semibold text-blue-600">${files.length} fichier(s) sélectionné(s)</span>`;
+            } else {
+                uploadText.innerHTML = '<span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez';
+            }
+        }
+    }
+    
     // Initialiser les événements quand la page est chargée
     updateSelectionCount();
 });
 </script>
 
 <style>
-/* Styles pour la sélection multiple */
 .image-card.selection-mode {
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .image-card.selected {
-    border: 2px solid #007bff;
-    background-color: #e3f2fd;
+    border: 2px solid #3b82f6;
+    background-color: #eff6ff;
     transform: scale(0.98);
 }
 
-.image-checkbox {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 5px;
-    border-radius: 3px;
-}
-
-.image-checkbox input[type="checkbox"] {
-    transform: scale(1.5);
-}
-
-.image-container {
-    position: relative;
-}
-
-.image-card {
-    transition: all 0.3s ease;
-}
-
-.image-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.drag-handle {
-    background: rgba(0, 123, 255, 0.1);
-    border: 1px dashed #007bff;
-    font-weight: bold;
-    color: #007bff;
-    user-select: none;
-}
-
 .drag-handle:hover {
-    background: rgba(0, 123, 255, 0.2);
+    background-color: #dbeafe !important;
+}
+
+.upload-highlight {
+    border-color: #3b82f6 !important;
+    background-color: #eff6ff !important;
+}
+
+@media (max-width: 640px) {
+    #imageGallery {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 640px) and (max-width: 768px) {
+    #imageGallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 </style>
 

@@ -130,153 +130,308 @@ foreach ($categories as $category) {
 
 ob_end_flush();
 ?>
-
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Gestion du Portfolio</h1>
-                <p class="text-muted">Catégories trouvées : <?php echo count($categories); ?></p>
+<div class="bg-white border-b border-gray-200 mb-6">
+    <div class="px-6 py-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Gestion du Portfolio</h1>
+                <p class="text-gray-600 mt-1"><?php echo count($categories); ?> catégorie(s) trouvée(s)</p>
             </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><a href="dashboard.php">Accueil</a></li>
-                    <li class="breadcrumb-item active">Portfolio</li>
-                </ol>
-            </div>
+            <nav class="flex space-x-2 text-sm">
+                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700">Accueil</a>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-medium">Portfolio</span>
+            </nav>
         </div>
     </div>
 </div>
-
-<section class="content">
-    <div class="container-fluid">
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php endif; ?>
-        <?php if (!empty($message)): ?>
-            <div class="alert alert-success"><?php echo $message; ?></div>
-        <?php endif; ?>
-        
-        <!-- Affichage des messages de session -->
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-        <?php endif; ?>
-
-        <!-- Information sur les catégories trouvées -->
-        <?php if (empty($categories)): ?>
-            <div class="alert alert-warning">
-                <h5><i class="fa fa-exclamation-triangle"></i> Aucune catégorie trouvée</h5>
-                <p>Aucun dossier de catégorie n'a été trouvé dans le répertoire portfolio.</p>
-                <p>Vous pouvez créer une nouvelle catégorie en utilisant le bouton "Gérer les catégories" ci-dessous.</p>
-            </div>
-        <?php endif; ?>
-        
-        <!-- Formulaire d'ajout d'images -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">Ajouter des images au portfolio</h3>
-                <div class="card-tools">
-                    <a href="manage_portfolio_categories.php" class="btn btn-primary btn-sm">
-                        <i class="fa fa-cog"></i> Gérer les catégories
-                    </a>
+<div class="px-6 space-y-6">
+    <?php if (!empty($error)): ?>
+        <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700"><?php echo htmlspecialchars($error); ?></p>
                 </div>
             </div>
-            <div class="card-body">
-                <?php if (!empty($categories)): ?>
-                    <form method="post" enctype="multipart/form-data">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="category">Catégorie</label>
-                                    <select class="form-control" id="category" name="category" required>
-                                        <option value="">Sélectionner une catégorie</option>
-                                        <?php foreach ($categories as $cat): ?>
-                                            <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="images">Sélectionner des images</label>
-                                    <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/*" required>
-                                    <small class="form-text text-muted">Vous pouvez sélectionner plusieurs images à la fois.</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-upload"></i> Télécharger
-                            </button>
-                        </div>
-                    </form>
-                <?php else: ?>
-                    <p class="text-center text-muted">Créez d'abord une catégorie pour pouvoir ajouter des images.</p>
-                <?php endif; ?>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($message)): ?>
+        <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($message); ?></p>
+                </div>
             </div>
         </div>
-        
-        <!-- Affichage des images par catégorie -->
-        <?php foreach ($categories as $category): ?>
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <?php echo htmlspecialchars($category); ?> 
-                        <span class="badge bg-info"><?php echo count($portfolioImages[$category]); ?> image(s)</span>
-                    </h3>
-                    <div class="card-tools">
-                        <a href="manage_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-primary btn-sm">
-                            <i class="fa fa-cog"></i> Gérer la catégorie
-                        </a>
-                        <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-success btn-sm">
-                            <i class="fa fa-plus"></i> Ajouter des images
-                        </a>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="emptyCategory('<?php echo htmlspecialchars($category); ?>')">
-                            <i class="fa fa-trash"></i> Vider la catégorie
+    <?php endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (empty($categories)): ?>
+        <div class="p-4 border-l-4 border-yellow-400 bg-yellow-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">Aucune catégorie trouvée</h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>Aucun dossier de catégorie n'a été trouvé dans le répertoire portfolio.</p>
+                        <p class="mt-1">Vous pouvez créer une nouvelle catégorie en utilisant le bouton "Gérer les catégories" ci-dessous.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($categories)): ?>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-folder text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Catégories</p>
+                        <p class="text-2xl font-bold text-gray-900"><?php echo count($categories); ?></p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-images text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Images</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            <?php 
+                            $totalImages = 0;
+                            foreach ($portfolioImages as $images) {
+                                $totalImages += count($images);
+                            }
+                            echo $totalImages;
+                            ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Moyenne par catégorie</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            <?php echo count($categories) > 0 ? round($totalImages / count($categories), 1) : 0; ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Ajouter des images au portfolio</h3>
+                    <p class="text-sm text-gray-600 mt-1">Téléchargez plusieurs images dans une catégorie existante</p>
+                </div>
+                <a href="manage_portfolio_categories.php" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                    <i class="fas fa-cog mr-2"></i>
+                    Gérer les catégories
+                </a>
+            </div>
+        </div>
+        <div class="p-6">
+            <?php if (!empty($categories)): ?>
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                                Catégorie <span class="text-red-500">*</span>
+                            </label>
+                            <select id="category" 
+                                    name="category" 
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                                <option value="">Sélectionner une catégorie</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
+                                Images <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="images" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                                        <p class="text-sm text-gray-500">
+                                            <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez
+                                        </p>
+                                        <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF</p>
+                                    </div>
+                                    <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*" required>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" 
+                                class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fas fa-upload mr-2"></i>
+                            Télécharger les images
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllCategory('<?php echo htmlspecialchars($category); ?>')">
-                            <i class="fa fa-times"></i> Supprimer la catégorie
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-folder-plus text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune catégorie disponible</h3>
+                    <p class="text-gray-600 mb-4">Créez d'abord une catégorie pour pouvoir ajouter des images.</p>
+                    <a href="manage_portfolio_categories.php" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        <i class="fas fa-plus mr-2"></i>
+                        Créer une catégorie
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php foreach ($categories as $category): ?>
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <?php echo htmlspecialchars($category); ?>
+                            <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <?php echo count($portfolioImages[$category]); ?> image(s)
+                            </span>
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">
+                            <?php 
+                            $categorySize = 0;
+                            foreach ($portfolioImages[$category] as $img) {
+                                $categorySize += $img['size'];
+                            }
+                            echo 'Taille totale: ' . round($categorySize / 1024 / 1024, 2) . ' MB';
+                            ?>
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="manage_category.php?category=<?php echo urlencode($category); ?>" 
+                           class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-cog mr-1"></i>
+                            Gérer
+                        </a>
+                        <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
+                           class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
+                            <i class="fas fa-plus mr-1"></i>
+                            Ajouter
+                        </a>
+                        <button type="button" onclick="emptyCategory('<?php echo htmlspecialchars($category); ?>')"
+                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200">
+                            <i class="fas fa-broom mr-1"></i>
+                            Vider
+                        </button>
+                        <button type="button" onclick="deleteAllCategory('<?php echo htmlspecialchars($category); ?>')"
+                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">
+                            <i class="fas fa-trash mr-1"></i>
+                            Supprimer
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <?php if (!empty($portfolioImages[$category])): ?>
-                        <div class="row">
-                            <?php foreach ($portfolioImages[$category] as $image): ?>
-                                <div class="col-md-2 col-sm-4 col-6 mb-3">
-                                    <div class="card">
-                                        <img src="<?php echo htmlspecialchars($image['url']); ?>" class="card-img-top" alt="Image" style="height: 150px; object-fit: cover;">
-                                        <div class="card-body p-2 text-center">
-                                            <h6 class="card-title small"><?php echo htmlspecialchars(substr($image['name'], 0, 15) . (strlen($image['name']) > 15 ? '...' : '')); ?></h6>
-                                            <p class="card-text small text-muted"><?php echo round($image['size'] / 1024, 1); ?> KB</p>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a href="<?php echo htmlspecialchars($image['url']); ?>" target="_blank" class="btn btn-info btn-sm" title="Voir">
-                                                    <i class="fa fa-eye"></i>
-                                                </a>
-                                                <a href="?delete=<?php echo urlencode($image['name']); ?>&category=<?php echo urlencode($category); ?>" 
-                                                   class="btn btn-danger btn-sm" 
-                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');" 
-                                                   title="Supprimer">
-                                                    <i class="fa fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </div>
+            </div>
+            <div class="p-6">
+                <?php if (!empty($portfolioImages[$category])): ?>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <?php foreach ($portfolioImages[$category] as $image): ?>
+                            <div class="group relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-1 aspect-h-1 bg-gray-100">
+                                    <img src="<?php echo htmlspecialchars($image['url']); ?>" 
+                                         alt="Image" 
+                                         class="w-full h-32 object-cover">
+                                </div>
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                                        <a href="<?php echo htmlspecialchars($image['url']); ?>" 
+                                           target="_blank" 
+                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                                           title="Voir l'image">
+                                            <i class="fas fa-eye text-sm"></i>
+                                        </a>
+                                        <a href="?delete=<?php echo urlencode($image['name']); ?>&category=<?php echo urlencode($category); ?>" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');" 
+                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                                           title="Supprimer l'image">
+                                            <i class="fas fa-trash text-sm"></i>
+                                        </a>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
+                                <div class="p-2">
+                                    <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($image['name']); ?>">
+                                        <?php echo htmlspecialchars(substr($image['name'], 0, 15) . (strlen($image['name']) > 15 ? '...' : '')); ?>
+                                    </h6>
+                                    <p class="text-xs text-gray-500"><?php echo round($image['size'] / 1024, 1); ?> KB</p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-images text-gray-400 text-2xl"></i>
                         </div>
-                    <?php else: ?>
-                        <p class="text-center text-muted">Aucune image dans cette catégorie.</p>
-                    <?php endif; ?>
-                </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune image</h3>
+                        <p class="text-gray-600 mb-4">Cette catégorie ne contient pas encore d'images.</p>
+                        <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>
+                            Ajouter des images
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endforeach; ?>
-    </div>
-</section>
-
+        </div>
+    <?php endforeach; ?>
+</div>
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 <script>
 function deleteAllCategory(category) {
     if (confirm('Êtes-vous sûr de vouloir supprimer TOUTES les images de la catégorie "' + category + '" ? Cette action est irréversible.')) {
@@ -289,6 +444,63 @@ function emptyCategory(category) {
         window.location.href = 'empty_portfolio_category.php?category=' + encodeURIComponent(category);
     }
 }
+
+// Gestion du drag and drop pour l'upload
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.querySelector('label[for="images"]');
+    const fileInput = document.getElementById('images');
+    
+    if (uploadArea && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            uploadArea.classList.add('border-blue-400', 'bg-blue-50');
+        }
+        
+        function unhighlight(e) {
+            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            fileInput.files = files;
+            updateFileList(files);
+        }
+        
+        // Mettre à jour l'affichage des fichiers sélectionnés
+        fileInput.addEventListener('change', function() {
+            updateFileList(this.files);
+        });
+        
+        function updateFileList(files) {
+            const uploadText = uploadArea.querySelector('p');
+            if (files.length > 0) {
+                uploadText.innerHTML = `<span class="font-semibold text-blue-600">${files.length} fichier(s) sélectionné(s)</span>`;
+            } else {
+                uploadText.innerHTML = '<span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez';
+            }
+        }
+    }
+});
 </script>
 
 <?php include "admin_footer.php"; ?>

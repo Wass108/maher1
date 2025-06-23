@@ -81,128 +81,191 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // On peut donc vider le buffer pour afficher la page
 ob_end_flush();
 ?>
-
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Ajouter un projet</h1>
+<div class="bg-white border-b border-gray-200 mb-6">
+    <div class="px-6 py-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Ajouter un projet</h1>
+                <p class="text-gray-600 mt-1">Créez un nouveau projet d'architecture</p>
             </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><a href="dashboard.php">Accueil</a></li>
-                    <li class="breadcrumb-item"><a href="projects.php">Projets</a></li>
-                    <li class="breadcrumb-item active">Ajouter un projet</li>
-                </ol>
-            </div>
+            <nav class="flex space-x-2 text-sm">
+                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700">Accueil</a>
+                <span class="text-gray-400">/</span>
+                <a href="projects.php" class="text-gray-500 hover:text-gray-700">Projets</a>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-medium">Ajouter un projet</span>
+            </nav>
         </div>
     </div>
 </div>
-
-<section class="content">
-    <div class="container-fluid">
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php endif; ?>
-        <?php if (!empty($message)): ?>
-            <div class="alert alert-success"><?php echo $message; ?></div>
-        <?php endif; ?>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Informations du projet</h3>
-            </div>
-            <div class="card-body">
-                <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="title">Titre du projet *</label>
-                                <input type="text" class="form-control" id="title" name="title" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="slug">Slug *</label>
-                                <input type="text" class="form-control" id="slug" name="slug" required>
-                                <small class="form-text text-muted">Utilisé pour l'URL du projet. Utilisez uniquement des lettres minuscules, des chiffres et des tirets.</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="category">Catégorie</label>
-                                <select class="form-control" id="category" name="category">
-                                    <option value="loge">Logements</option>
-                                    <option value="hotels">Hotels</option>
-                                    <option value="indus">Industries</option>
-                                    <option value="bim">BIM</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="year">Année</label>
-                                <input type="number" class="form-control" id="year" name="year" min="2000" max="2099">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group mb-3">
-                        <label for="description">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="5"></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="client">Client</label>
-                                <input type="text" class="form-control" id="client" name="client">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="website">Site web</label>
-                                <input type="url" class="form-control" id="website" name="website">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group mb-3">
-                        <label for="btnText">Texte du bouton</label>
-                        <input type="text" class="form-control" id="btnText" name="btnText" value="Voir le projet">
-                    </div>
-                    
-                    <!-- Section modifiée pour les cases à cocher -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="featured" name="featured">
-                                <label class="form-check-label" for="featured">Mettre en Une (afficher sur la page d'accueil)</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="hidden" name="hidden">
-                                <label class="form-check-label" for="hidden">Masquer le projet (ne pas afficher sur le site)</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-info">
-                        <small>Note: Un projet ne peut pas être à la fois en Une et masqué. Si vous cochez les deux options, l'option "masquer" sera prioritaire.</small>
-                    </div>
-                    
-                    <div class="form-group mt-4">
-                        <button type="submit" class="btn btn-primary">Enregistrer</button>
-                        <a href="projects.php" class="btn btn-secondary">Annuler</a>
-                    </div>
-                </form>
+<div class="px-6">
+    <?php if (!empty($error)): ?>
+        <div class="mb-6 p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700"><?php echo htmlspecialchars($error); ?></p>
+                </div>
             </div>
         </div>
+    <?php endif; ?>
+    <?php if (!empty($message)): ?>
+        <div class="mb-6 p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700"><?php echo htmlspecialchars($message); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Informations du projet</h3>
+            <p class="text-sm text-gray-600 mt-1">Remplissez les détails de votre nouveau projet</p>
+        </div>
+        <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" class="p-6 space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                        Titre du projet <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="title" 
+                           name="title" 
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                           placeholder="Entrez le titre du projet">
+                </div>
+                <div>
+                    <label for="slug" class="block text-sm font-medium text-gray-700 mb-2">
+                        Slug <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="slug" 
+                           name="slug" 
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                           placeholder="url-du-projet">
+                    <p class="mt-1 text-xs text-gray-500">Utilisé pour l'URL du projet. Lettres minuscules, chiffres et tirets uniquement.</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                    <select id="category" 
+                            name="category"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                        <option value="loge">Logements</option>
+                        <option value="hotels">Hotels</option>
+                        <option value="indus">Industries</option>
+                        <option value="bim">BIM</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Année</label>
+                    <input type="number" 
+                           id="year" 
+                           name="year" 
+                           min="2000" 
+                           max="2099"
+                           value="<?php echo date('Y'); ?>"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea id="description" 
+                          name="description" 
+                          rows="5"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                          placeholder="Décrivez votre projet..."></textarea>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <label for="client" class="block text-sm font-medium text-gray-700 mb-2">Client</label>
+                    <input type="text" 
+                           id="client" 
+                           name="client"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                           placeholder="Nom du client">
+                </div>
+                <div>
+                    <label for="website" class="block text-sm font-medium text-gray-700 mb-2">Site web</label>
+                    <input type="url" 
+                           id="website" 
+                           name="website"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                           placeholder="https://exemple.com">
+                </div>
+            </div>
+            <div>
+                <label for="btnText" class="block text-sm font-medium text-gray-700 mb-2">Texte du bouton</label>
+                <input type="text" 
+                       id="btnText" 
+                       name="btnText" 
+                       value="Voir le projet"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+            </div>
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-4">Options d'affichage</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   id="featured" 
+                                   name="featured"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <span class="ml-3 text-sm text-gray-700">
+                                <span class="font-medium">Mettre en Une</span><br>
+                                <span class="text-gray-500">Afficher sur la page d'accueil</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   id="hidden" 
+                                   name="hidden"
+                                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <span class="ml-3 text-sm text-gray-700">
+                                <span class="font-medium">Masquer le projet</span><br>
+                                <span class="text-gray-500">Ne pas afficher sur le site</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-2">
+                            <p class="text-xs text-blue-700">
+                                Un projet ne peut pas être à la fois en Une et masqué. Si vous cochez les deux options, l'option "masquer" sera prioritaire.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="projects.php" 
+                   class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                    Annuler
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    <i class="fas fa-save mr-2"></i>
+                    Enregistrer le projet
+                </button>
+            </div>
+        </form>
     </div>
-</section>
+</div>
 
 <script>
     // Génération automatique du slug à partir du titre
@@ -225,9 +288,11 @@ ob_end_flush();
                 // Si "masqué" est coché, on décoche "en une"
                 featuredCheckbox.checked = false;
                 featuredCheckbox.disabled = true;
+                featuredCheckbox.parentElement.style.opacity = '0.5';
             } else {
                 // Si "masqué" est décoché, on permet de cocher "en une"
                 featuredCheckbox.disabled = false;
+                featuredCheckbox.parentElement.style.opacity = '1';
             }
         });
         
