@@ -72,8 +72,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_empty'])) {
         $_SESSION['message'] = "Aucune image trouvée dans la catégorie '$category'.";
     }
     
-    // Rediriger vers la page portfolio
-    header("Location: portfolio.php");
+    // Déterminer la page de redirection basée sur le referer ou un paramètre
+    $redirectTo = 'portfolio.php';
+    if (isset($_GET['redirect']) && $_GET['redirect'] === 'manage_category') {
+        $redirectTo = 'manage_category.php?category=' . urlencode($category);
+    } elseif (isset($_SERVER['HTTP_REFERER'])) {
+        $referer = $_SERVER['HTTP_REFERER'];
+        if (strpos($referer, 'manage_category.php') !== false) {
+            $redirectTo = 'manage_category.php?category=' . urlencode($category);
+        }
+    }
+    
+    // Rediriger vers la page appropriée
+    header("Location: $redirectTo");
     exit;
 } else {
     // Afficher la page de confirmation

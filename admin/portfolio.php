@@ -228,6 +228,9 @@ ob_end_flush();
                         <span class="badge bg-info"><?php echo count($portfolioImages[$category]); ?> image(s)</span>
                     </h3>
                     <div class="card-tools">
+                        <a href="manage_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-primary btn-sm">
+                            <i class="fa fa-cog"></i> Gérer la catégorie
+                        </a>
                         <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-success btn-sm">
                             <i class="fa fa-plus"></i> Ajouter des images
                         </a>

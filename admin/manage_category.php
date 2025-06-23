@@ -69,22 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_category'])) {
     exit;
 }
 
-// Traitement de la suppression d'une image
-if (isset($_GET['delete']) && !empty($_GET['delete'])) {
-    $imageToDelete = $_GET['delete'];
-    $imagePath = $categoryDir . $imageToDelete;
-    
-    if (file_exists($imagePath) && unlink($imagePath)) {
-        $_SESSION['message'] = "Image '$imageToDelete' supprimée avec succès.";
-    } else {
-        $_SESSION['error'] = "Impossible de supprimer l'image '$imageToDelete'.";
-    }
-    
-    // Rediriger pour éviter la resoumission
-    header("Location: manage_category.php?category=" . urlencode($category));
-    exit;
-}
-
 // Récupérer les images de cette catégorie
 $categoryImages = [];
 if (is_dir($categoryDir)) {
@@ -144,7 +128,7 @@ ob_end_flush();
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="btn-group" role="group">
-                    <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-success">
+                    <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>&redirect=manage_category" class="btn btn-success">
                         <i class="fa fa-plus"></i> Ajouter des images
                     </a>
                     <a href="portfolio.php" class="btn btn-secondary">
@@ -218,25 +202,67 @@ ob_end_flush();
                 </h3>
                 <div class="card-tools">
                     <?php if ($totalImages > 0): ?>
-                        <a href="empty_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
-                           class="btn btn-warning btn-sm"
-                           onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Toutes les images seront supprimées mais la catégorie restera.');">
-                            <i class="fa fa-trash"></i> Vider la catégorie
-                        </a>
-                        <a href="delete_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer complètement cette catégorie ? Le dossier et toutes les images seront supprimés.');">
-                            <i class="fa fa-times"></i> Supprimer la catégorie
-                        </a>
+                        <!-- Boutons de sélection multiple -->
+                        <div class="btn-group btn-group-sm" role="group" id="bulk-actions" style="display: none;">
+                            <button type="button" class="btn btn-danger" onclick="deleteSelectedImages()">
+                                <i class="fa fa-trash"></i> Supprimer sélectionnées (<span id="selected-count">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearSelection()">
+                                <i class="fa fa-times"></i> Annuler
+                            </button>
+                        </div>
+                        
+                        <!-- Boutons de gestion de catégorie -->
+                        <div class="btn-group btn-group-sm" role="group" id="category-actions">
+                            <button type="button" class="btn btn-info btn-sm" onclick="toggleSelectionMode()">
+                                <i class="fa fa-check-square-o"></i> Sélection multiple
+                            </button>
+                            <a href="empty_portfolio_category.php?category=<?php echo urlencode($category); ?>&redirect=manage_category" 
+                               class="btn btn-warning btn-sm"
+                               onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Toutes les images seront supprimées mais la catégorie restera.');">
+                                <i class="fa fa-trash"></i> Vider la catégorie
+                            </a>
+                            <a href="delete_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer complètement cette catégorie ? Le dossier et toutes les images seront supprimés.');">
+                                <i class="fa fa-times"></i> Supprimer la catégorie
+                            </a>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
             <div class="card-body">
                 <?php if (!empty($categoryImages)): ?>
+                    <!-- Alert zone pour les messages AJAX -->
+                    <div id="ajax-messages"></div>
+                    
+                    <!-- Contrôles de sélection -->
+                    <div class="row mb-3" id="selection-controls" style="display: none;">
+                        <div class="col-12">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="selectAll()">
+                                    <i class="fa fa-check-square"></i> Tout sélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="selectNone()">
+                                    <i class="fa fa-square-o"></i> Tout désélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="invertSelection()">
+                                    <i class="fa fa-exchange"></i> Inverser la sélection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="row">
                         <?php foreach ($categoryImages as $image): ?>
-                            <div class="col-md-3 col-sm-6 col-12 mb-3">
-                                <div class="card">
+                            <div class="col-md-3 col-sm-6 col-12 mb-3" data-image="<?php echo htmlspecialchars($image['name']); ?>">
+                                <div class="card image-card">
+                                    <!-- Case à cocher (masquée par défaut) -->
+                                    <div class="image-checkbox" style="display: none;">
+                                        <input type="checkbox" class="image-select" value="<?php echo htmlspecialchars($image['name']); ?>" 
+                                               onchange="updateSelectionCount()">
+                                    </div>
+                                    
                                     <img src="<?php echo $image['url']; ?>" class="card-img-top" alt="Image" style="height: 200px; object-fit: cover;">
                                     <div class="card-body p-2">
                                         <h6 class="card-title small text-truncate" title="<?php echo htmlspecialchars($image['name']); ?>">
@@ -246,11 +272,11 @@ ob_end_flush();
                                             <?php echo round($image['size'] / 1024, 1); ?> KB<br>
                                             <small><?php echo date('d/m/Y H:i', $image['modified']); ?></small>
                                         </p>
-                                        <div class="btn-group btn-group-sm w-100" role="group">
+                                        <div class="btn-group btn-group-sm w-100 image-actions" role="group">
                                             <a href="<?php echo $image['url']; ?>" target="_blank" class="btn btn-info" title="Voir en grand">
                                                 <i class="fa fa-eye"></i>
                                             </a>
-                                            <a href="?delete=<?php echo urlencode($image['name']); ?>" 
+                                            <a href="delete_portfolio_image.php?category=<?php echo urlencode($category); ?>&image=<?php echo urlencode($image['name']); ?>&redirect=manage_category" 
                                                class="btn btn-danger" 
                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');" 
                                                title="Supprimer">
@@ -278,3 +304,226 @@ ob_end_flush();
 </section>
 
 <?php include "admin_footer.php"; ?>
+
+<style>
+.image-card {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.image-card.selected {
+    border: 3px solid #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.image-checkbox {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.image-checkbox input[type="checkbox"] {
+    transform: scale(1.2);
+}
+
+.image-card.selection-mode {
+    cursor: pointer;
+}
+
+.image-card.selection-mode:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+</style>
+
+<script>
+let selectionMode = false;
+
+function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    
+    if (selectionMode) {
+        // Activer le mode sélection
+        $('.image-checkbox').show();
+        $('.image-card').addClass('selection-mode');
+        $('#selection-controls').show();
+        $('#bulk-actions').show();
+        $('#category-actions').hide();
+        
+        // Changer le texte du bouton
+        $('button[onclick="toggleSelectionMode()"]').html('<i class="fa fa-times"></i> Annuler sélection');
+        $('button[onclick="toggleSelectionMode()"]').attr('onclick', 'exitSelectionMode()');
+    } else {
+        exitSelectionMode();
+    }
+}
+
+function exitSelectionMode() {
+    selectionMode = false;
+    
+    // Désactiver le mode sélection
+    $('.image-checkbox').hide();
+    $('.image-card').removeClass('selection-mode selected');
+    $('.image-select').prop('checked', false);
+    $('#selection-controls').hide();
+    $('#bulk-actions').hide();
+    $('#category-actions').show();
+    
+    // Remettre le texte original du bouton
+    $('button[onclick="exitSelectionMode()"]').html('<i class="fa fa-check-square-o"></i> Sélection multiple');
+    $('button[onclick="exitSelectionMode()"]').attr('onclick', 'toggleSelectionMode()');
+    
+    updateSelectionCount();
+}
+
+function clearSelection() {
+    exitSelectionMode();
+}
+
+function selectAll() {
+    $('.image-select').prop('checked', true);
+    $('.image-card').addClass('selected');
+    updateSelectionCount();
+}
+
+function selectNone() {
+    $('.image-select').prop('checked', false);
+    $('.image-card').removeClass('selected');
+    updateSelectionCount();
+}
+
+function invertSelection() {
+    $('.image-select').each(function() {
+        $(this).prop('checked', !$(this).prop('checked'));
+        $(this).trigger('change');
+    });
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const selectedCount = $('.image-select:checked').length;
+    $('#selected-count').text(selectedCount);
+    
+    // Mettre à jour l'apparence des cartes
+    $('.image-select').each(function() {
+        const card = $(this).closest('.col-md-3').find('.image-card');
+        if ($(this).is(':checked')) {
+            card.addClass('selected');
+        } else {
+            card.removeClass('selected');
+        }
+    });
+    
+    // Activer/désactiver le bouton de suppression
+    if (selectedCount > 0) {
+        $('#bulk-actions button.btn-danger').prop('disabled', false);
+    } else {
+        $('#bulk-actions button.btn-danger').prop('disabled', true);
+    }
+}
+
+function deleteSelectedImages() {
+    const selectedImages = [];
+    $('.image-select:checked').each(function() {
+        selectedImages.push($(this).val());
+    });
+    
+    if (selectedImages.length === 0) {
+        alert('Aucune image sélectionnée');
+        return;
+    }
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedImages.length} image(s) sélectionnée(s) ? Cette action est irréversible.`)) {
+        return;
+    }
+    
+    // Désactiver le bouton pendant la suppression
+    const deleteButton = $('#bulk-actions button.btn-danger');
+    const originalText = deleteButton.html();
+    deleteButton.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Suppression...');
+    
+    // Envoyer la requête AJAX
+    $.ajax({
+        url: 'delete_multiple_images.php',
+        type: 'POST',
+        data: {
+            action: 'delete_multiple',
+            category: '<?php echo $category; ?>',
+            images: selectedImages
+        },
+        dataType: 'json',
+        success: function(response) {
+            // Afficher le message de résultat
+            let alertClass = response.success ? 'alert-success' : 'alert-danger';
+            let alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${response.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            
+            $('#ajax-messages').html(alertHtml);
+            
+            if (response.success && response.deleted > 0) {
+                // Supprimer les images de l'interface
+                selectedImages.forEach(function(imageName) {
+                    $(`[data-image="${imageName}"]`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Mettre à jour le compteur d'images
+                        const remainingImages = $('.image-card').length;
+                        $('.card-title .badge').text(`${remainingImages} image(s)`);
+                        
+                        // Si plus d'images, afficher le message "aucune image"
+                        if (remainingImages === 0) {
+                            location.reload();
+                        }
+                    });
+                });
+                
+                // Sortir du mode sélection
+                setTimeout(function() {
+                    exitSelectionMode();
+                }, 500);
+            }
+            
+            // Réactiver le bouton
+            deleteButton.prop('disabled', false).html(originalText);
+            
+            // Faire défiler vers le message
+            $('html, body').animate({
+                scrollTop: $('#ajax-messages').offset().top - 100
+            }, 500);
+        },
+        error: function(xhr, status, error) {
+            console.log('Erreur AJAX:', xhr.responseText);
+            $('#ajax-messages').html(`<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                Erreur lors de la suppression des images. Veuillez réessayer.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`);
+            
+            deleteButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+// Permettre de cliquer sur la carte pour sélectionner/désélectionner
+$(document).on('click', '.image-card.selection-mode', function(e) {
+    // Éviter le conflit avec les boutons d'action
+    if ($(e.target).closest('.image-actions, .image-checkbox').length > 0) {
+        return;
+    }
+    
+    const checkbox = $(this).find('.image-select');
+    checkbox.prop('checked', !checkbox.prop('checked'));
+    checkbox.trigger('change');
+});
+
+// Initialiser les événements quand la page est chargée
+$(document).ready(function() {
+    updateSelectionCount();
+});
+</script>

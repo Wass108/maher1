@@ -84,8 +84,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
         $_SESSION['error'] = "$errorCount image(s) n'ont pas pu être téléchargées.";
     }
     
-    // Rediriger vers la page portfolio principale
-    header("Location: portfolio.php");
+    // Déterminer la page de redirection basée sur le referer ou un paramètre
+    $redirectTo = "add_portfolio_category.php?category=" . urlencode($category);
+    
+    if (isset($_GET['redirect'])) {
+        if ($_GET['redirect'] === 'manage_category') {
+            $redirectTo = 'manage_category.php?category=' . urlencode($category);
+        } elseif ($_GET['redirect'] === 'portfolio') {
+            $redirectTo = 'portfolio.php';
+        }
+    } elseif (isset($_SERVER['HTTP_REFERER'])) {
+        $referer = $_SERVER['HTTP_REFERER'];
+        if (strpos($referer, 'manage_category.php') !== false) {
+            $redirectTo = 'manage_category.php?category=' . urlencode($category);
+        } elseif (strpos($referer, 'portfolio.php') !== false) {
+            $redirectTo = 'portfolio.php';
+        }
+        // Sinon, reste sur add_portfolio_category.php par défaut
+    }
+    
+    // Rediriger vers la page appropriée
+    header("Location: $redirectTo");
     exit;
 }
 
@@ -153,6 +172,9 @@ ob_end_flush();
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fa fa-upload"></i> Télécharger les images
                         </button>
+                        <a href="manage_category.php?category=<?php echo urlencode($category); ?>" class="btn btn-warning btn-lg">
+                            <i class="fa fa-cog"></i> Gérer la catégorie
+                        </a>
                         <a href="portfolio.php" class="btn btn-secondary btn-lg">
                             <i class="fa fa-arrow-left"></i> Retour au portfolio
                         </a>

@@ -80,8 +80,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
         $_SESSION['message'] = "Aucune image trouvée dans la catégorie $category et le dossier n'existait pas.";
     }
     
-    // Rediriger vers la page portfolio
-    header("Location: portfolio.php");
+    // Déterminer la page de redirection basée sur le referer ou un paramètre
+    $redirectTo = 'portfolio.php';
+    if (isset($_GET['redirect']) && $_GET['redirect'] === 'manage_categories') {
+        $redirectTo = 'manage_portfolio_categories.php';
+    } elseif (isset($_SERVER['HTTP_REFERER'])) {
+        $referer = $_SERVER['HTTP_REFERER'];
+        if (strpos($referer, 'manage_category.php') !== false) {
+            // Si on vient de manage_category.php, retourner au portfolio puisque la catégorie n'existe plus
+            $redirectTo = 'portfolio.php';
+        } elseif (strpos($referer, 'manage_portfolio_categories.php') !== false) {
+            $redirectTo = 'manage_portfolio_categories.php';
+        }
+    }
+    
+    // Rediriger vers la page appropriée
+    header("Location: $redirectTo");
     exit;
 } else {
     // Afficher la page de confirmation

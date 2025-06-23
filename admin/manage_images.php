@@ -333,31 +333,69 @@ ob_end_flush();
             <div class="card-header">
                 <h3 class="card-title">Images actuelles</h3>
                 <div class="card-tools">
-                    <button id="saveOrder" class="btn btn-success" style="display:none;">
-                        <i class="fa fa-save"></i> Enregistrer l'ordre
-                    </button>
-                    <button id="cancelReorder" class="btn btn-secondary" style="display:none;">
-                        <i class="fa fa-times"></i> Annuler
-                    </button>
-                    <button id="enableReorder" class="btn btn-primary" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                        <i class="fa fa-arrows"></i> Réorganiser les images
-                    </button>
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="reorganize_images" value="1">
-                        <button type="submit" class="btn btn-warning" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                            <i class="fa fa-sort-numeric-asc"></i> Renuméroter les images
+                    <!-- Boutons de sélection multiple (cachés par défaut) -->
+                    <div class="btn-group btn-group-sm" role="group" id="bulk-actions" style="display: none;">
+                        <button type="button" class="btn btn-danger" onclick="deleteSelectedImages()" disabled>
+                            <i class="fa fa-trash"></i> Supprimer sélectionnées (<span id="selected-count">0</span>)
                         </button>
-                    </form>
-                    <a href="delete_all_images.php?project=<?php echo $projectId; ?>" class="btn btn-danger" <?php echo empty($images) ? 'disabled' : ''; ?>>
-                        <i class="fa fa-trash"></i> Supprimer toutes les images
-                    </a>
-                    <a href="edit_project.php?id=<?php echo $projectId; ?>" class="btn btn-info">
-                        <i class="fa fa-pencil"></i> Modifier le projet
-                    </a>
+                        <button type="button" class="btn btn-secondary" onclick="clearSelection()">
+                            <i class="fa fa-times"></i> Annuler
+                        </button>
+                    </div>
+                    
+                    <!-- Boutons normaux -->
+                    <div id="normal-actions">
+                        <?php if (!empty($images)): ?>
+                            <button type="button" class="btn btn-info btn-sm" onclick="toggleSelectionMode()">
+                                <i class="fa fa-check-square-o"></i> Sélection multiple
+                            </button>
+                        <?php endif; ?>
+                        <button id="saveOrder" class="btn btn-success" style="display:none;">
+                            <i class="fa fa-save"></i> Enregistrer l'ordre
+                        </button>
+                        <button id="cancelReorder" class="btn btn-secondary" style="display:none;">
+                            <i class="fa fa-times"></i> Annuler
+                        </button>
+                        <button id="enableReorder" class="btn btn-primary" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                            <i class="fa fa-arrows"></i> Réorganiser les images
+                        </button>
+                        <form method="post" style="display: inline;">
+                            <input type="hidden" name="reorganize_images" value="1">
+                            <button type="submit" class="btn btn-warning" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                                <i class="fa fa-sort-numeric-asc"></i> Renuméroter les images
+                            </button>
+                        </form>
+                        <a href="delete_all_images.php?project=<?php echo $projectId; ?>" class="btn btn-danger" <?php echo empty($images) ? 'disabled' : ''; ?>>
+                            <i class="fa fa-trash"></i> Supprimer toutes les images
+                        </a>
+                        <a href="edit_project.php?id=<?php echo $projectId; ?>" class="btn btn-info">
+                            <i class="fa fa-pencil"></i> Modifier le projet
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <?php if (!empty($images)): ?>
+                    <!-- Alert zone pour les messages AJAX -->
+                    <div id="ajax-messages"></div>
+                    
+                    <!-- Contrôles de sélection (cachés par défaut) -->
+                    <div class="row mb-3" id="selection-controls" style="display: none;">
+                        <div class="col-12">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="selectAll()">
+                                    <i class="fa fa-check-square"></i> Tout sélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="selectNone()">
+                                    <i class="fa fa-square-o"></i> Tout désélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="invertSelection()">
+                                    <i class="fa fa-exchange"></i> Inverser la sélection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="alert alert-info">
                         <p><strong>Note:</strong> L'image affichée en premier sera utilisée comme image principale du projet dans les listes.</p>
                         <p id="reorderInstructions" style="display:none;"><strong>Mode de réorganisation:</strong> Vous pouvez maintenant glisser et déposer les images pour modifier leur ordre. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.</p>
@@ -365,7 +403,13 @@ ob_end_flush();
                     <div id="imageGallery" class="row">
                         <?php foreach ($images as $index => $image): ?>
                             <div class="col-md-3 mb-4 image-container" data-image="<?php echo basename($image); ?>">
-                                <div class="card">
+                                <div class="card image-card">
+                                    <!-- Case à cocher (masquée par défaut) -->
+                                    <div class="image-checkbox" style="display: none;">
+                                        <input type="checkbox" class="image-select" value="<?php echo htmlspecialchars(basename($image)); ?>" 
+                                               onchange="updateSelectionCount()">
+                                    </div>
+                                    
                                     <div class="drag-handle" style="display:none; cursor:move; background-color: #f4f6f9; text-align: center; padding: 5px;">
                                         <i class="fa fa-arrows"></i> Déplacer
                                     </div>
@@ -377,9 +421,11 @@ ob_end_flush();
                                                 <span class="badge bg-success main-image-badge">Image principale</span>
                                             <?php endif; ?>
                                         </p>
-                                        <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" class="btn btn-danger delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
-                                            <i class="fa fa-trash"></i> Supprimer
-                                        </a>
+                                        <div class="image-actions">
+                                            <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" class="btn btn-danger delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
+                                                <i class="fa fa-trash"></i> Supprimer
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -396,18 +442,201 @@ ob_end_flush();
 
 <!-- Script pour le glisser-déposer -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+// Variables globales pour éviter les conflits
+let selectionMode = false;
+let reorderMode = false;
+
+function toggleSelectionMode() {
+    // Vérifier qu'on n'est pas en mode réorganisation
+    if (reorderMode) {
+        alert('Veuillez d\'abord quitter le mode de réorganisation avant d\'activer la sélection multiple');
+        return;
+    }
+    
+    selectionMode = !selectionMode;
+    
+    if (selectionMode) {
+        // Activer le mode sélection
+        $('.image-checkbox').show();
+        $('.image-card').addClass('selection-mode');
+        $('#selection-controls').show();
+        $('#bulk-actions').show();
+        $('#normal-actions').hide();
+        
+        // Désactiver le bouton de réorganisation pendant la sélection
+        $('#enableReorder').prop('disabled', true);
+        
+        // Changer le texte du bouton
+        $('button[onclick="toggleSelectionMode()"]').html('<i class="fa fa-times"></i> Annuler sélection');
+        $('button[onclick="toggleSelectionMode()"]').attr('onclick', 'exitSelectionMode()');
+    } else {
+        exitSelectionMode();
+    }
+}
+
+function exitSelectionMode() {
+    selectionMode = false;
+    
+    // Désactiver le mode sélection
+    $('.image-checkbox').hide();
+    $('.image-card').removeClass('selection-mode selected');
+    $('.image-select').prop('checked', false);
+    $('#selection-controls').hide();
+    $('#bulk-actions').hide();
+    $('#normal-actions').show();
+    
+    // Réactiver le bouton de réorganisation
+    $('#enableReorder').prop('disabled', false);
+    
+    // Remettre le texte original du bouton
+    $('button[onclick="exitSelectionMode()"]').html('<i class="fa fa-check-square-o"></i> Sélection multiple');
+    $('button[onclick="exitSelectionMode()"]').attr('onclick', 'toggleSelectionMode()');
+    
+    updateSelectionCount();
+}
+
+function clearSelection() {
+    exitSelectionMode();
+}
+
+function selectAll() {
+    $('.image-select').prop('checked', true);
+    $('.image-card').addClass('selected');
+    updateSelectionCount();
+}
+
+function selectNone() {
+    $('.image-select').prop('checked', false);
+    $('.image-card').removeClass('selected');
+    updateSelectionCount();
+}
+
+function invertSelection() {
+    $('.image-select').each(function() {
+        $(this).prop('checked', !$(this).prop('checked'));
+        $(this).trigger('change');
+    });
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const selectedCount = $('.image-select:checked').length;
+    $('#selected-count').text(selectedCount);
+    
+    // Mettre à jour l'apparence des cartes
+    $('.image-select').each(function() {
+        const card = $(this).closest('.image-container').find('.image-card');
+        if ($(this).is(':checked')) {
+            card.addClass('selected');
+        } else {
+            card.removeClass('selected');
+        }
+    });
+    
+    // Activer/désactiver le bouton de suppression
+    if (selectedCount > 0) {
+        $('#bulk-actions button.btn-danger').prop('disabled', false);
+    } else {
+        $('#bulk-actions button.btn-danger').prop('disabled', true);
+    }
+}
+
+function deleteSelectedImages() {
+    const selectedImages = [];
+    $('.image-select:checked').each(function() {
+        selectedImages.push($(this).val());
+    });
+    
+    if (selectedImages.length === 0) {
+        alert('Aucune image sélectionnée');
+        return;
+    }
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedImages.length} image(s) sélectionnée(s) ? Cette action est irréversible.`)) {
+        return;
+    }
+    
+    // Désactiver le bouton pendant la suppression
+    const deleteButton = $('#bulk-actions button.btn-danger');
+    const originalText = deleteButton.html();
+    deleteButton.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Suppression...');
+    
+    // Envoyer la requête AJAX
+    $.ajax({
+        url: 'delete_multiple_project_images.php',
+        type: 'POST',
+        data: {
+            action: 'delete_multiple',
+            project: '<?php echo $projectId; ?>',
+            images: selectedImages
+        },
+        dataType: 'json',
+        success: function(response) {
+            // Afficher le message de résultat
+            let alertClass = response.success ? 'alert-success' : 'alert-danger';
+            let alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${response.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            
+            $('#ajax-messages').html(alertHtml);
+            
+            if (response.success && response.deleted > 0) {
+                // Supprimer les images de l'interface
+                selectedImages.forEach(function(imageName) {
+                    $(`.image-container[data-image="${imageName}"]`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Si plus d'images, recharger la page pour mettre à jour l'interface
+                        if ($('.image-container').length === 0) {
+                            location.reload();
+                        }
+                    });
+                });
+                
+                // Sortir du mode sélection
+                setTimeout(function() {
+                    exitSelectionMode();
+                }, 500);
+            }
+            
+            // Réactiver le bouton
+            deleteButton.prop('disabled', false).html(originalText);
+            
+            // Faire défiler vers le message
+            $('html, body').animate({
+                scrollTop: $('#ajax-messages').offset().top - 100
+            }, 500);
+        },
+        error: function(xhr, status, error) {
+            console.log('Erreur AJAX:', xhr.responseText);
+            $('#ajax-messages').html(`<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                Erreur lors de la suppression des images. Veuillez réessayer.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`);
+            
+            deleteButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const imageGallery = document.getElementById('imageGallery');
     const enableReorderBtn = document.getElementById('enableReorder');
     const saveOrderBtn = document.getElementById('saveOrder');
     const cancelReorderBtn = document.getElementById('cancelReorder');
     const reorderInstructions = document.getElementById('reorderInstructions');
-    const dragHandles = document.querySelectorAll('.drag-handle');
-    const deleteButtons = document.querySelectorAll('.delete-btn');
     
     let sortable = null;
     let originalOrder = [];
+    
+    // Vérifier que les éléments existent
+    if (!imageGallery || !enableReorderBtn || !saveOrderBtn || !cancelReorderBtn) {
+        console.log('Certains éléments du DOM ne sont pas trouvés');
+        return;
+    }
     
     // Enregistrer l'ordre original des images
     function captureOriginalOrder() {
@@ -419,23 +648,46 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Activer le mode de réorganisation
     enableReorderBtn.addEventListener('click', function() {
+        // Vérifier qu'on n'est pas en mode sélection
+        if (selectionMode) {
+            alert('Veuillez d\'abord quitter le mode de sélection multiple avant d\'activer la réorganisation');
+            return;
+        }
+        
+        reorderMode = true;
         captureOriginalOrder();
         
-        // Afficher/masquer les éléments appropriés
+        // Mettre à jour l'interface
         enableReorderBtn.style.display = 'none';
         saveOrderBtn.style.display = 'inline-block';
         cancelReorderBtn.style.display = 'inline-block';
-        reorderInstructions.style.display = 'block';
+        if (reorderInstructions) {
+            reorderInstructions.style.display = 'block';
+        }
         
-        // Afficher les poignées de glissement
+        // Afficher les poignées de glissement et masquer les boutons de suppression
+        const dragHandles = document.querySelectorAll('.drag-handle');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        const imageCheckboxes = document.querySelectorAll('.image-checkbox');
+        
         dragHandles.forEach(handle => {
             handle.style.display = 'block';
         });
         
-        // Masquer les boutons de suppression pour éviter les clics accidentels
         deleteButtons.forEach(btn => {
             btn.style.display = 'none';
         });
+        
+        // S'assurer que les cases à cocher sont masquées et désactiver le bouton de sélection
+        imageCheckboxes.forEach(checkbox => {
+            checkbox.style.display = 'none';
+        });
+        
+        // Désactiver le bouton de sélection multiple pendant la réorganisation
+        const selectionButton = document.querySelector('button[onclick="toggleSelectionMode()"]');
+        if (selectionButton) {
+            selectionButton.disabled = true;
+        }
         
         // Activer Sortable.js
         sortable = new Sortable(imageGallery, {
@@ -478,6 +730,10 @@ document.addEventListener('DOMContentLoaded', function() {
             imageOrder.push(container.getAttribute('data-image'));
         });
         
+        // Désactiver le bouton pendant l'enregistrement
+        saveOrderBtn.disabled = true;
+        saveOrderBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enregistrement...';
+        
         // Envoyer l'ordre au serveur via AJAX
         const formData = new FormData();
         formData.append('reorder', 'true');
@@ -490,11 +746,9 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData
         })
         .then(response => {
-            // Vérifier si la réponse est OK avant de la traiter comme JSON
             if(response.ok) {
                 return response.json().catch(() => {
-                    // Si la conversion en JSON échoue, rechargez quand même la page
-                    // car la réorganisation a probablement fonctionné
+                    // Si la conversion en JSON échoue, recharger la page
                     location.reload();
                     return { success: true };
                 });
@@ -504,23 +758,29 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data && data.success) {
-                // Recharger la page pour afficher les images réorganisées
                 location.reload();
             } else if (data && data.message) {
-                alert('Une erreur est survenue lors de la réorganisation des images: ' + data.message);
-            } else {
-                // La page sera probablement déjà rechargée grâce au bloc catch du premier then
+                alert('Erreur: ' + data.message);
+                // Réactiver le bouton
+                saveOrderBtn.disabled = false;
+                saveOrderBtn.innerHTML = '<i class="fa fa-save"></i> Enregistrer l\'ordre';
             }
         })
         .catch(error => {
             console.error('Erreur:', error);
-            // Ne pas afficher d'alerte ici, car la réorganisation peut avoir fonctionné malgré l'erreur
             location.reload();
         });
     });
     
     // Annuler la réorganisation
     cancelReorderBtn.addEventListener('click', function() {
+        exitReorderMode();
+    });
+    
+    // Fonction pour quitter le mode réorganisation
+    function exitReorderMode() {
+        reorderMode = false;
+        
         // Restaurer l'ordre original
         const fragment = document.createDocumentFragment();
         originalOrder.forEach(imageName => {
@@ -537,7 +797,13 @@ document.addEventListener('DOMContentLoaded', function() {
         enableReorderBtn.style.display = 'inline-block';
         saveOrderBtn.style.display = 'none';
         cancelReorderBtn.style.display = 'none';
-        reorderInstructions.style.display = 'none';
+        if (reorderInstructions) {
+            reorderInstructions.style.display = 'none';
+        }
+        
+        // Masquer les poignées et réafficher les boutons
+        const dragHandles = document.querySelectorAll('.drag-handle');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
         
         dragHandles.forEach(handle => {
             handle.style.display = 'none';
@@ -547,6 +813,12 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.style.display = 'inline-block';
         });
         
+        // Réactiver le bouton de sélection multiple
+        const selectionButton = document.querySelector('button[onclick="toggleSelectionMode()"]');
+        if (selectionButton) {
+            selectionButton.disabled = false;
+        }
+        
         // Réinitialiser le badge de l'image principale
         updateMainImageBadge();
         
@@ -555,8 +827,79 @@ document.addEventListener('DOMContentLoaded', function() {
             sortable.destroy();
             sortable = null;
         }
+    }
+    
+    // Permettre de cliquer sur la carte pour sélectionner/désélectionner
+    $(document).on('click', '.image-card', function(e) {
+        // Ne fonctionner que si on est en mode sélection
+        if (!selectionMode) return;
+        
+        // Éviter le conflit avec les boutons d'action et les poignées de drag
+        if ($(e.target).closest('.image-actions, .image-checkbox, .drag-handle').length > 0) {
+            return;
+        }
+        
+        const checkbox = $(this).find('.image-select');
+        checkbox.prop('checked', !checkbox.prop('checked'));
+        checkbox.trigger('change');
     });
+    
+    // Initialiser les événements quand la page est chargée
+    updateSelectionCount();
 });
 </script>
+
+<style>
+/* Styles pour la sélection multiple */
+.image-card.selection-mode {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-card.selected {
+    border: 2px solid #007bff;
+    background-color: #e3f2fd;
+    transform: scale(0.98);
+}
+
+.image-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.image-checkbox input[type="checkbox"] {
+    transform: scale(1.5);
+}
+
+.image-container {
+    position: relative;
+}
+
+.image-card {
+    transition: all 0.3s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.drag-handle {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px dashed #007bff;
+    font-weight: bold;
+    color: #007bff;
+    user-select: none;
+}
+
+.drag-handle:hover {
+    background: rgba(0, 123, 255, 0.2);
+}
+</style>
 
 <?php include "admin_footer.php"; ?>
