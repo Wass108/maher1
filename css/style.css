@@ -139,6 +139,30 @@ ol {
 .set-bg {
 	background-size: cover;
 	background-repeat: no-repeat;
+	background-position: center;
+}
+
+/* Amélioration pour le slider du projet */
+.hero-section .hero-slider .hero-slide-item.set-bg {
+	background-size: contain;
+	background-position: center;
+	background-color: #f5f5f5;
+}
+
+/* Alternative pour les images très larges */
+@media (min-width: 992px) {
+	.hero-section .hero-slider .hero-slide-item.set-bg {
+		background-size: cover;
+		background-position: center;
+	}
+}
+
+/* Pour les images portrait ou très hautes */
+.hero-section .hero-slider .hero-slide-item.set-bg[data-setbg*=".jpg"],
+.hero-section .hero-slider .hero-slide-item.set-bg[data-setbg*=".jpeg"],
+.hero-section .hero-slider .hero-slide-item.set-bg[data-setbg*=".png"] {
+	background-size: contain;
+	background-position: center;
 }
 
 /*------------------------
