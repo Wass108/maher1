@@ -98,18 +98,6 @@ include 'auth_check.php';
                     <i class="fas fa-images <?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
                     Portfolio
                 </a>
-                <a href="services.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-cogs <?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Services
-                </a>
-                <a href="users.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-users <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Utilisateurs
-                </a>
-                <a href="settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-cog <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Paramètres
-                </a>
             </nav>
         </div>
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">

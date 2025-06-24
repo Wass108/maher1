@@ -57,7 +57,7 @@ include 'auth_check.php';
                         </button>
                         
                         <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none" style="display: none;">
-                            <a href="profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                                 <i class="fas fa-user-circle mr-2"></i>
                                 Mon profil
                             </a>
@@ -84,30 +84,13 @@ include 'auth_check.php';
                     <i class="fas fa-chart-line <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
                     Tableau de bord
                 </a>
-                
                 <a href="projects.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'projects.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
                     <i class="fas fa-building <?php echo basename($_SERVER['PHP_SELF']) == 'projects.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
                     Projets
                 </a>
-                
                 <a href="portfolio.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
                     <i class="fas fa-images <?php echo basename($_SERVER['PHP_SELF']) == 'portfolio.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
                     Portfolio
-                </a>
-                
-                <a href="services.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-cogs <?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Services
-                </a>
-                
-                <a href="users.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-users <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Utilisateurs
-                </a>
-                
-                <a href="settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'bg-gray-100 text-gray-900 border-r-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150">
-                    <i class="fas fa-cog <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'; ?> mr-3"></i>
-                    Paramètres
                 </a>
             </nav>
         </div>

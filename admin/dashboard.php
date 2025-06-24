@@ -125,15 +125,6 @@ $recentProjects = $stmtRecentProjects->fetchAll();
                             <p class="text-sm text-gray-600">Modifier, supprimer</p>
                         </div>
                     </a>
-                    <a href="settings.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors duration-200 group">
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-200">
-                            <i class="fa fa-gear text-purple-600"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900">Paramètres</p>
-                            <p class="text-sm text-gray-600">Configuration</p>
-                        </div>
-                    </a>
                     <a href="../index.php" target="_blank" class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors duration-200 group">
                         <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-indigo-200">
                             <i class="fa fa-external-link text-indigo-600"></i>
