@@ -258,14 +258,19 @@ ob_end_flush();
         </div>
     <?php endif; ?>
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div class="p-6 border-b border-gray-200">
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
             <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Ajouter des images au portfolio</h3>
-                    <p class="text-sm text-gray-600 mt-1">Téléchargez plusieurs images dans une catégorie existante</p>
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-upload text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Ajouter des images au portfolio</h3>
+                        <p class="text-blue-100 text-sm">Téléchargez plusieurs images dans une catégorie existante</p>
+                    </div>
                 </div>
                 <a href="manage_portfolio_categories.php" 
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                   class="inline-flex items-center px-4 py-2 border border-white border-opacity-30 text-sm font-medium rounded-md text-white bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors duration-200">
                     <i class="fas fa-cog mr-2"></i>
                     Gérer les catégories
                 </a>
@@ -273,7 +278,7 @@ ob_end_flush();
         </div>
         <div class="p-6">
             <?php if (!empty($categories)): ?>
-                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                <form method="post" enctype="multipart/form-data" id="upload-form" class="space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
@@ -295,23 +300,45 @@ ob_end_flush();
                                 Images <span class="text-red-500">*</span>
                             </label>
                             <div class="flex items-center justify-center w-full">
-                                <label for="images" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
-                                        <p class="text-sm text-gray-500">
-                                            <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez
+                                <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                    <div id="drop-content" class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                                            <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
+                                        </div>
+                                        <p class="mb-2 text-sm text-gray-500">
+                                            <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos images
                                         </p>
-                                        <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF</p>
+                                        <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
+                                    </div>
+                                    <div id="preview-container" class="hidden w-full p-4">
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
+                                        </div>
                                     </div>
                                     <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*" required>
                                 </label>
+                            </div>                    
+                            <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                    <span id="file-count" class="text-sm text-blue-700 font-medium"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
+                    <div id="upload-progress" class="hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Téléchargement en cours...</span>
+                            <span id="progress-percent" class="text-sm font-medium text-gray-700">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
                     <div class="flex justify-end">
-                        <button type="submit" 
-                                class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                        <button type="submit" id="upload-btn"
+                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
                             <i class="fas fa-upload mr-2"></i>
                             Télécharger les images
                         </button>
@@ -445,61 +472,199 @@ function emptyCategory(category) {
     }
 }
 
-// Gestion du drag and drop pour l'upload
+// Gestion avancée du drag and drop pour l'upload avec prévisualisation
 document.addEventListener('DOMContentLoaded', function() {
-    const uploadArea = document.querySelector('label[for="images"]');
+    const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('images');
-    
-    if (uploadArea && fileInput) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, unhighlight, false);
-        });
-        
-        function highlight(e) {
-            uploadArea.classList.add('border-blue-400', 'bg-blue-50');
-        }
-        
-        function unhighlight(e) {
-            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
-        }
-        
-        uploadArea.addEventListener('drop', handleDrop, false);
-        
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            
-            fileInput.files = files;
-            updateFileList(files);
-        }
-        
-        // Mettre à jour l'affichage des fichiers sélectionnés
-        fileInput.addEventListener('change', function() {
-            updateFileList(this.files);
-        });
-        
-        function updateFileList(files) {
-            const uploadText = uploadArea.querySelector('p');
-            if (files.length > 0) {
-                uploadText.innerHTML = `<span class="font-semibold text-blue-600">${files.length} fichier(s) sélectionné(s)</span>`;
-            } else {
-                uploadText.innerHTML = '<span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez';
-            }
-        }
+    const dropContent = document.getElementById('drop-content');
+    const previewContainer = document.getElementById('preview-container');
+    const previewGrid = document.getElementById('preview-grid');
+    const fileInfo = document.getElementById('file-info');
+    const fileCount = document.getElementById('file-count');
+    const uploadForm = document.getElementById('upload-form');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+
+    // Gestion du drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
     }
+
+    function highlight() {
+        dropZone.classList.add('border-blue-500', 'bg-blue-50');
+    }
+
+    function unhighlight() {
+        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        fileInput.files = files;
+        handleFiles(files);
+    }
+
+    // Gestion du changement de fichiers
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length === 0) {
+            showDropContent();
+            return;
+        }
+
+        // Filtrer les fichiers image uniquement
+        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length === 0) {
+            alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF)');
+            fileInput.value = '';
+            showDropContent();
+            return;
+        }
+
+        // Afficher les informations
+        fileCount.textContent = `${imageFiles.length} image(s) sélectionnée(s)`;
+        fileInfo.classList.remove('hidden');
+
+        // Générer les aperçus
+        previewGrid.innerHTML = '';
+        dropContent.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+
+        imageFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'relative group';
+                previewDiv.innerHTML = `
+                    <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
+                        <img src="${e.target.result}" class="w-full h-20 object-cover">
+                    </div>
+                    <div class="absolute top-1 right-1">
+                        <button type="button" onclick="removeFile(${index})" 
+                                class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
+                `;
+                previewGrid.appendChild(previewDiv);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Activer le bouton d'upload
+        uploadBtn.disabled = false;
+    }
+
+    function showDropContent() {
+        dropContent.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+        fileInfo.classList.add('hidden');
+        uploadBtn.disabled = true;
+    }
+
+    // Fonction pour supprimer un fichier (accessible globalement)
+    window.removeFile = function(index) {
+        const dt = new DataTransfer();
+        const files = Array.from(fileInput.files);
+        
+        files.forEach((file, i) => {
+            if (i !== index) {
+                dt.items.add(file);
+            }
+        });
+        
+        fileInput.files = dt.files;
+        handleFiles(fileInput.files);
+    };
+
+    // Gestion de la soumission du formulaire avec progress
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (fileInput.files.length === 0) {
+            alert('Veuillez sélectionner au moins une image');
+            return;
+        }
+
+        const categorySelect = document.getElementById('category');
+        if (!categorySelect.value) {
+            alert('Veuillez sélectionner une catégorie');
+            return;
+        }
+
+        // Préparer l'upload avec progress
+        const formData = new FormData(uploadForm);
+        
+        // Afficher la barre de progression
+        uploadProgress.classList.remove('hidden');
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Téléchargement...';
+
+        // Simuler un upload avec XMLHttpRequest pour avoir le contrôle du progress
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressPercent.textContent = Math.round(percentComplete) + '%';
+            }
+        });
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Redirection sera gérée par PHP
+                window.location.reload();
+            } else {
+                alert('Erreur lors du téléchargement');
+                resetUploadState();
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('Erreur réseau lors du téléchargement');
+            resetUploadState();
+        };
+
+        xhr.open('POST', uploadForm.action || window.location.href);
+        xhr.send(formData);
+    });
+
+    function resetUploadState() {
+        uploadProgress.classList.add('hidden');
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Télécharger les images';
+        progressBar.style.width = '0%';
+        progressPercent.textContent = '0%';
+    }
+
+    // Initialiser l'état
+    showDropContent();
 });
 </script>
 
