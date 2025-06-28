@@ -269,11 +269,18 @@ ob_end_flush();
                         <p class="text-blue-100 text-sm">Téléchargez plusieurs images dans une catégorie existante</p>
                     </div>
                 </div>
-                <a href="manage_portfolio_categories.php" 
-                   class="inline-flex items-center px-4 py-2 border border-white border-opacity-30 text-sm font-medium rounded-md text-white bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors duration-200">
-                    <i class="fas fa-cog mr-2"></i>
-                    Gérer les catégories
-                </a>
+                <div class="flex space-x-2">
+                    <a href="manage_portfolio_categories.php" 
+                       class="inline-flex items-center px-4 py-2 border border-white border-opacity-30 text-sm font-medium rounded-md text-white bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors duration-200">
+                        <i class="fas fa-cog mr-2"></i>
+                        Gérer les catégories
+                    </a>
+                    <a href="manage_portfolio_videos.php" 
+                       class="inline-flex items-center px-4 py-2 border border-white border-opacity-30 text-sm font-medium rounded-md text-white bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors duration-200">
+                        <i class="fas fa-video mr-2"></i>
+                        Gérer les vidéos
+                    </a>
+                </div>
             </div>
         </div>
         <div class="p-6">

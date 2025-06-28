@@ -217,6 +217,10 @@ $recentProjects = $stmtRecentProjects->fetchAll();
                                                     <i class="fa fa-images mr-1"></i>
                                                     Images
                                                 </a>
+                                                <a href="manage_videos.php?project=<?php echo $project['id']; ?>" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-orange-700 bg-orange-100 hover:bg-orange-200 transition-colors duration-150">
+                                                    <i class="fa fa-video mr-1"></i>
+                                                    Vidéos
+                                                </a>
                                                 <a href="../project.php?project=<?php echo urlencode($project['slug']); ?>" target="_blank" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 transition-colors duration-150">
                                                     <i class="fa fa-eye mr-1"></i>
                                                     Voir

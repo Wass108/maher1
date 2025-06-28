@@ -156,6 +156,10 @@ if (isset($_SESSION['message'])) {
                                             <i class="fas fa-images mr-1"></i>
                                             Images
                                         </a>
+                                        <a href="manage_videos.php?project=<?php echo $project['id']; ?>" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 transition-colors duration-150">
+                                            <i class="fas fa-video mr-1"></i>
+                                            Vidéos
+                                        </a>
                                         <a href="toggle_featured.php?id=<?php echo $project['id']; ?>" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded <?php echo $project['featured'] == 1 ? 'text-orange-700 bg-orange-100 hover:bg-orange-200' : 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200'; ?> transition-colors duration-150">
                                             <i class="fas fa-star mr-1"></i>
                                             <?php echo $project['featured'] == 1 ? 'Retirer' : 'Mettre'; ?>
@@ -227,6 +231,10 @@ if (isset($_SESSION['message'])) {
                                 <a href="manage_images.php?project=<?php echo $project['id']; ?>" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 transition-colors duration-150">
                                     <i class="fas fa-images mr-1"></i>
                                     Images
+                                </a>
+                                <a href="manage_videos.php?project=<?php echo $project['id']; ?>" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 transition-colors duration-150">
+                                    <i class="fas fa-video mr-1"></i>
+                                    Vidéos
                                 </a>
                             </div>
                             <div class="flex flex-wrap gap-2 mt-2">
