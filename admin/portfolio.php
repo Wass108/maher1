@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <img src="${e.target.result}" class="w-full h-20 object-cover">
                     </div>
                     <div class="absolute top-1 right-1">
-                        <button type="button" onclick="removeFile(${index})" 
+                        <button type="button" onclick="removeFile(${index}, event)" 
                                 class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
                             <i class="fas fa-times"></i>
                         </button>
@@ -613,7 +613,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Fonction pour supprimer un fichier (accessible globalement)
-    window.removeFile = function(index) {
+    window.removeFile = function(index, event) {
+        // Empêcher la propagation de l'événement pour éviter d'ouvrir la sélection de fichiers
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
         console.log('Suppression du fichier à l\'index:', index); // Debug
         const dt = new DataTransfer();
         const files = Array.from(fileInput.files);
