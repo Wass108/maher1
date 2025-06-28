@@ -474,6 +474,8 @@ function emptyCategory(category) {
 
 // Gestion avancée du drag and drop pour l'upload avec prévisualisation
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Script drag & drop initialisé'); // Debug
+    
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('images');
     const dropContent = document.getElementById('drop-content');
@@ -486,6 +488,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadProgress = document.getElementById('upload-progress');
     const progressBar = document.getElementById('progress-bar');
     const progressPercent = document.getElementById('progress-percent');
+
+    // Vérification que tous les éléments existent
+    if (!dropZone || !fileInput || !dropContent || !previewContainer || !previewGrid || 
+        !fileInfo || !fileCount || !uploadForm || !uploadBtn || !uploadProgress || 
+        !progressBar || !progressPercent) {
+        console.error('Certains éléments requis pour le drag & drop sont manquants');
+        console.log('dropZone:', dropZone);
+        console.log('fileInput:', fileInput);
+        console.log('dropContent:', dropContent);
+        return;
+    }
+
+    console.log('Tous les éléments trouvés, initialisation du drag & drop'); // Debug
 
     // Gestion du drag and drop
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -509,16 +524,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function highlight() {
+        console.log('Zone de drop activée'); // Debug
         dropZone.classList.add('border-blue-500', 'bg-blue-50');
     }
 
     function unhighlight() {
+        console.log('Zone de drop désactivée'); // Debug
         dropZone.classList.remove('border-blue-500', 'bg-blue-50');
     }
 
     function handleDrop(e) {
+        console.log('Fichiers déposés'); // Debug
         const dt = e.dataTransfer;
         const files = dt.files;
+        
+        console.log('Nombre de fichiers:', files.length); // Debug
         
         fileInput.files = files;
         handleFiles(files);
@@ -526,10 +546,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gestion du changement de fichiers
     fileInput.addEventListener('change', function(e) {
+        console.log('Fichiers sélectionnés via input'); // Debug
         handleFiles(e.target.files);
     });
 
     function handleFiles(files) {
+        console.log('Traitement des fichiers:', files.length); // Debug
+        
         if (files.length === 0) {
             showDropContent();
             return;
@@ -537,6 +560,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Filtrer les fichiers image uniquement
         const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        
+        console.log('Fichiers image valides:', imageFiles.length); // Debug
         
         if (imageFiles.length === 0) {
             alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF)');
@@ -589,6 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fonction pour supprimer un fichier (accessible globalement)
     window.removeFile = function(index) {
+        console.log('Suppression du fichier à l\'index:', index); // Debug
         const dt = new DataTransfer();
         const files = Array.from(fileInput.files);
         
@@ -606,13 +632,15 @@ document.addEventListener('DOMContentLoaded', function() {
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        console.log('Soumission du formulaire'); // Debug
+        
         if (fileInput.files.length === 0) {
             alert('Veuillez sélectionner au moins une image');
             return;
         }
 
         const categorySelect = document.getElementById('category');
-        if (!categorySelect.value) {
+        if (!categorySelect || !categorySelect.value) {
             alert('Veuillez sélectionner une catégorie');
             return;
         }
@@ -637,6 +665,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         xhr.onload = function() {
+            console.log('Upload terminé, status:', xhr.status); // Debug
             if (xhr.status === 200) {
                 // Redirection sera gérée par PHP
                 window.location.reload();
@@ -647,6 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         xhr.onerror = function() {
+            console.error('Erreur réseau'); // Debug
             alert('Erreur réseau lors du téléchargement');
             resetUploadState();
         };
@@ -665,6 +695,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialiser l'état
     showDropContent();
+    
+    console.log('Drag & drop complètement initialisé'); // Debug
 });
 </script>
 
