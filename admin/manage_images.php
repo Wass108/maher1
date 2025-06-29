@@ -1112,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dropContent.classList.remove('hidden');
         previewContainer.classList.add('hidden');
         fileInfo.classList.add('hidden');
-        uploadBtn.disabled = true;
+        uploadBtn.disabled = true;  
     }
 
     // Fonction pour supprimer un fichier (accessible globalement)

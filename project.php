@@ -19,12 +19,21 @@ if (!$projectDetails) {
 
 // Définir le dossier du projet en se basant sur le slug
 $projectFolder = "img/projects/" . $projectSlug . "/";
+$videoFolder = "videos/projects/" . $projectSlug . "/";
 
 // Récupérer toutes les images du dossier (formats jpg, jpeg, png, gif)
 $imagesFromFolder = glob($projectFolder . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
 
+// Récupérer toutes les vidéos du dossier
+$videosFromFolder = glob($videoFolder . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+
 // Trier les images par nom de fichier pour maintenir l'ordre numérique (même logique que dans l'admin)
 usort($imagesFromFolder, function($a, $b) {
+    return strnatcmp(basename($a), basename($b));
+});
+
+// Trier les vidéos par nom de fichier
+usort($videosFromFolder, function($a, $b) {
     return strnatcmp(basename($a), basename($b));
 });
 
@@ -32,6 +41,11 @@ $images = array_map(function($path) {
     // Remplacer les espaces par %20 dans les chemins d'images pour l'URL
     return ['image_path' => str_replace(' ', '%20', $path)];
 }, $imagesFromFolder);
+
+$videos = array_map(function($path) {
+    // Remplacer les espaces par %20 dans les chemins de vidéos pour l'URL
+    return ['video_path' => str_replace(' ', '%20', $path)];
+}, $videosFromFolder);
 ?>
 
 <link rel="stylesheet" href="css/single.css">
@@ -90,6 +104,58 @@ $images = array_map(function($path) {
                 <?php endif; ?>
             </div>
         </div>
+        
+        <!-- Section Vidéos -->
+        <?php if (!empty($videos)): ?>
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="heading mb-4">Vidéos du projet</div>
+                <div class="project-videos-gallery">
+                    <?php foreach ($videos as $index => $video): ?>
+                        <div class="video-item" data-aos="fade-up" data-aos-delay="<?php echo ($index * 100); ?>">
+                            <div class="video-card">
+                                <div class="video-thumbnail-container">
+                                    <video class="video-thumbnail" preload="metadata" muted>
+                                        <source src="<?php echo $video['video_path']; ?>" type="video/<?php echo pathinfo($video['video_path'], PATHINFO_EXTENSION); ?>">
+                                    </video>
+                                    <div class="video-overlay">
+                                        <div class="play-button" onclick="openVideoModal('<?php echo $video['video_path']; ?>', '<?php echo basename($video['video_path']); ?>')">
+                                            <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.9)"/>
+                                                <path d="M24 18L42 30L24 42V18Z" fill="#000"/>
+                                            </svg>
+                                        </div>
+                                        <div class="video-duration"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <h6 class="video-title">Vidéo <?php echo ($index + 1); ?></h6>
+                                    <p class="video-filename"><?php echo basename($video['video_path']); ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Vidéo -->
+        <div id="videoModal" class="video-modal">
+            <div class="video-modal-content">
+                <div class="video-modal-header">
+                    <h4 id="modalVideoTitle">Vidéo</h4>
+                    <button class="video-modal-close" onclick="closeVideoModal()">&times;</button>
+                </div>
+                <div class="video-modal-body">
+                    <video id="modalVideo" controls>
+                        <source src="" type="video/mp4">
+                        Votre navigateur ne supporte pas la lecture de vidéos.
+                    </video>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <div class="row">
             <?php if (!empty($projectDetails['year'])): ?>
                 <div class="col-sm-3 border-left">
@@ -108,3 +174,26 @@ $images = array_map(function($path) {
 
 <?php include "projects.php"; ?>
 <?php include "footer.php"; ?>
+
+<script>
+    function openVideoModal(videoPath, videoTitle) {
+        var modal = document.getElementById("videoModal");
+        var modalVideo = document.getElementById("modalVideo");
+        var modalVideoTitle = document.getElementById("modalVideoTitle");
+        
+        modalVideo.src = videoPath;
+        modalVideoTitle.innerHTML = videoTitle;
+        
+        modal.style.display = "block";
+    }
+
+    function closeVideoModal() {
+        var modal = document.getElementById("videoModal");
+        var modalVideo = document.getElementById("modalVideo");
+        
+        modalVideo.pause();
+        modalVideo.src = "";
+        
+        modal.style.display = "none";
+    }
+</script>
