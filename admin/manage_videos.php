@@ -26,30 +26,42 @@ if (!$project) {
 $message = '';
 $error = '';
 
-// Traitement du téléchargement de vidéos
+// Traitement du téléchargement de vidéos et images
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['videos'])) {
-    $projectDir = "../videos/projects/" . $project['slug'] . "/";
+    $videoProjectDir = "../videos/projects/" . $project['slug'] . "/";
+    $imageProjectDir = "../img/projects/" . $project['slug'] . "/";
     
-    // Créer le dossier s'il n'existe pas
-    if (!is_dir($projectDir)) {
-        mkdir($projectDir, 0777, true);
+    // Créer les dossiers s'ils n'existent pas
+    if (!is_dir($videoProjectDir)) {
+        mkdir($videoProjectDir, 0777, true);
+    }
+    if (!is_dir($imageProjectDir)) {
+        mkdir($imageProjectDir, 0777, true);
     }
     
-    // Récupérer les vidéos existantes
-    $existingVideos = glob($projectDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+    // Récupérer les fichiers existants pour chaque type
+    $existingVideos = glob($videoProjectDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+    $existingImages = glob($imageProjectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
     
-    // Déterminer les numéros déjà utilisés
-    $usedNumbers = [];
+    // Déterminer les numéros déjà utilisés pour les vidéos
+    $usedVideoNumbers = [];
     foreach ($existingVideos as $video) {
         $filename = basename($video);
-        // Extrait le numéro de la vidéo (ex: "01.mp4" -> 1)
         if (preg_match('/^(\d+)\./', $filename, $matches)) {
-            $usedNumbers[] = (int)$matches[1];
+            $usedVideoNumbers[] = (int)$matches[1];
         }
     }
+    sort($usedVideoNumbers);
     
-    // Trier les numéros utilisés
-    sort($usedNumbers);
+    // Déterminer les numéros déjà utilisés pour les images
+    $usedImageNumbers = [];
+    foreach ($existingImages as $image) {
+        $filename = basename($image);
+        if (preg_match('/^(\d+)\./', $filename, $matches)) {
+            $usedImageNumbers[] = (int)$matches[1];
+        }
+    }
+    sort($usedImageNumbers);
     
     // Fonction pour trouver le prochain numéro disponible
     function findNextAvailableNumber($usedNumbers) {
@@ -65,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['videos'])) {
         return $nextNumber;
     }
     
-    $uploadCount = 0;
+    $videoUploadCount = 0;
+    $imageUploadCount = 0;
     $errorCount = 0;
     
     // Traiter chaque fichier
@@ -78,16 +91,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['videos'])) {
             if (strpos($fileType, 'video/') === 0) {
                 $extension = pathinfo($fileName, PATHINFO_EXTENSION);
                 
-                // Trouver le prochain numéro disponible
-                $nextNumber = findNextAvailableNumber($usedNumbers);
-                $usedNumbers[] = $nextNumber; // Ajouter ce numéro à la liste des utilisés
-                sort($usedNumbers); // Retrier la liste
+                // Trouver le prochain numéro disponible pour les vidéos
+                $nextNumber = findNextAvailableNumber($usedVideoNumbers);
                 
                 $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
-                $destination = $projectDir . $newFileName;
+                $destination = $videoProjectDir . $newFileName;
+                
+                // Vérifier si le fichier existe déjà
+                while (file_exists($destination)) {
+                    $nextNumber++;
+                    $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                    $destination = $videoProjectDir . $newFileName;
+                }
                 
                 if (move_uploaded_file($tmp_name, $destination)) {
-                    $uploadCount++;
+                    $videoUploadCount++;
+                    $usedVideoNumbers[] = $nextNumber;
+                    sort($usedVideoNumbers);
+                } else {
+                    $errorCount++;
+                }
+            }
+            // Vérifier si c'est une image
+            elseif (strpos($fileType, 'image/') === 0) {
+                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                
+                // Trouver le prochain numéro disponible pour les images
+                $nextNumber = findNextAvailableNumber($usedImageNumbers);
+                
+                $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                $destination = $imageProjectDir . $newFileName;
+                
+                // Vérifier si le fichier existe déjà
+                while (file_exists($destination)) {
+                    $nextNumber++;
+                    $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                    $destination = $imageProjectDir . $newFileName;
+                }
+                
+                if (move_uploaded_file($tmp_name, $destination)) {
+                    $imageUploadCount++;
+                    $usedImageNumbers[] = $nextNumber;
+                    sort($usedImageNumbers);
                 } else {
                     $errorCount++;
                 }
@@ -98,12 +143,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['videos'])) {
     }
     
     // Préparer les messages pour la session
-    if ($uploadCount > 0) {
-        $_SESSION['message'] = "$uploadCount vidéo(s) téléchargée(s) avec succès.";
+    $messages = [];
+    if ($videoUploadCount > 0) {
+        $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
+    }
+    if ($imageUploadCount > 0) {
+        $messages[] = "$imageUploadCount image(s) téléchargée(s)";
+    }
+    
+    if (!empty($messages)) {
+        $_SESSION['message'] = implode(' et ', $messages) . " avec succès.";
     }
     if ($errorCount > 0) {
-        $_SESSION['error'] = "$errorCount vidéo(s) n'ont pas pu être téléchargées.";
+        $_SESSION['error'] = "$errorCount fichier(s) n'ont pas pu être téléchargés.";
     }
+    
+    // Forcer la mise à jour du cache
+    clearstatcache();
     
     // Rediriger pour éviter la résoumission du formulaire
     header("Location: manage_videos.php?project=" . $projectId);
@@ -187,8 +243,8 @@ ob_end_flush();
                     <i class="fas fa-video text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold">Ajouter des vidéos</h3>
-                    <p class="text-purple-100 text-sm">Téléchargez plusieurs vidéos à la fois</p>
+                    <h3 class="text-lg font-semibold">Ajouter des vidéos et images</h3>
+                    <p class="text-purple-100 text-sm">Téléchargez plusieurs vidéos et images à la fois</p>
                 </div>
             </div>
         </div>
@@ -196,7 +252,7 @@ ob_end_flush();
             <form method="post" enctype="multipart/form-data" id="upload-form" class="space-y-6">
                 <div>
                     <label for="videos" class="block text-sm font-medium text-gray-700 mb-2">
-                        Sélectionner des vidéos <span class="text-red-500">*</span>
+                        Sélectionner des vidéos et images <span class="text-red-500">*</span>
                     </label>
                     <div class="flex items-center justify-center w-full">
                         <label for="videos" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
@@ -209,11 +265,11 @@ ob_end_flush();
                                 </p>
                                 <p class="text-xs text-gray-500">MP4, AVI, MOV, WMV, FLV, WEBM, MKV (plusieurs fichiers acceptés)</p>
                             </div>
-                            <div id="preview-container" class="hidden w-full p-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="preview-grid">
+                            <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                 </div>
                             </div>
-                            <input id="videos" name="videos[]" type="file" class="hidden" multiple accept="video/*" required>
+                            <input id="videos" name="videos[]" type="file" class="hidden" multiple accept="video/*,image/*" required>
                         </label>
                     </div>
                     <div id="file-info" class="hidden mt-4 p-4 bg-purple-50 rounded-lg">
@@ -380,18 +436,33 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Filtrer les fichiers vidéo uniquement
-        const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+        // Filtrer les fichiers vidéo ET image
+        const mediaFiles = Array.from(files).filter(file => 
+            file.type.startsWith('video/') || file.type.startsWith('image/')
+        );
         
-        if (videoFiles.length === 0) {
-            alert('Veuillez sélectionner uniquement des fichiers vidéo (MP4, AVI, MOV, etc.)');
+        if (mediaFiles.length === 0) {
+            alert('Veuillez sélectionner uniquement des fichiers vidéo (MP4, AVI, MOV, etc.) ou des images (PNG, JPG, JPEG, GIF)');
             fileInput.value = '';
             showDropContent();
             return;
         }
 
+        // Compter séparément les vidéos et images
+        const videoCount = mediaFiles.filter(f => f.type.startsWith('video/')).length;
+        const imageCount = mediaFiles.filter(f => f.type.startsWith('image/')).length;
+        
+        let countText = '';
+        if (videoCount > 0 && imageCount > 0) {
+            countText = `${videoCount} vidéo(s) et ${imageCount} image(s) sélectionnée(s)`;
+        } else if (videoCount > 0) {
+            countText = `${videoCount} vidéo(s) sélectionnée(s)`;
+        } else {
+            countText = `${imageCount} image(s) sélectionnée(s)`;
+        }
+
         // Afficher les informations
-        fileCount.textContent = `${videoFiles.length} vidéo(s) sélectionnée(s)`;
+        fileCount.textContent = countText;
         fileInfo.classList.remove('hidden');
 
         // Générer les aperçus
@@ -399,24 +470,50 @@ document.addEventListener('DOMContentLoaded', function() {
         dropContent.classList.add('hidden');
         previewContainer.classList.remove('hidden');
 
-        videoFiles.forEach((file, index) => {
+        mediaFiles.forEach((file, index) => {
             const previewDiv = document.createElement('div');
             previewDiv.className = 'relative group bg-gray-100 rounded-lg p-4';
-            previewDiv.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-video text-purple-600"></i>
+            
+            if (file.type.startsWith('video/')) {
+                // Aperçu pour vidéo
+                previewDiv.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-video text-purple-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate" title="${file.name}">${file.name}</p>
+                            <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB • Vidéo</p>
+                        </div>
+                        <button type="button" onclick="removeFile(${index}, event)" 
+                                class="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate" title="${file.name}">${file.name}</p>
-                        <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                    </div>
-                    <button type="button" onclick="removeFile(${index}, event)" 
-                            class="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
+                `;
+            } else if (file.type.startsWith('image/')) {
+                // Aperçu pour image avec prévisualisation
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewDiv.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
+                                <img src="${e.target.result}" class="w-full h-full object-cover" alt="Aperçu">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate" title="${file.name}">${file.name}</p>
+                                <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB • Image</p>
+                            </div>
+                            <button type="button" onclick="removeFile(${index}, event)" 
+                                    class="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+            
             previewGrid.appendChild(previewDiv);
         });
 

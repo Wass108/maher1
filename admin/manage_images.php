@@ -26,98 +26,246 @@ if (!$project) {
 $message = '';
 $error = '';
 
-// Traitement du téléchargement d'une image
+// Traitement du téléchargement d'images et vidéos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
-    $projectDir = "../img/projects/" . $project['slug'] . "/";
+    $imageProjectDir = "../img/projects/" . $project['slug'] . "/";
+    $videoProjectDir = "../videos/projects/" . $project['slug'] . "/";
     
-    // Créer le dossier s'il n'existe pas
-    if (!is_dir($projectDir)) {
-        mkdir($projectDir, 0777, true);
+    // Créer les dossiers s'ils n'existent pas
+    if (!is_dir($imageProjectDir)) {
+        mkdir($imageProjectDir, 0777, true);
+        usleep(100000); // 0.1 seconde
+    }
+    if (!is_dir($videoProjectDir)) {
+        mkdir($videoProjectDir, 0777, true);
+        usleep(100000); // 0.1 seconde
     }
     
-    // Récupérer les images existantes
-    $existingImages = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+    // Forcer la mise à jour du cache avant de lire les fichiers existants
+    clearstatcache();
     
-    // Déterminer les numéros déjà utilisés
-    $usedNumbers = [];
+    // Récupérer les fichiers existants pour chaque type
+    $existingImages = glob($imageProjectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+    $existingVideos = glob($videoProjectDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+    
+    // Déterminer les numéros déjà utilisés pour les images
+    $usedImageNumbers = [];
     foreach ($existingImages as $image) {
         $filename = basename($image);
-        // Extrait le numéro de l'image (ex: "01.jpg" -> 1)
         if (preg_match('/^(\d+)\./', $filename, $matches)) {
-            $usedNumbers[] = (int)$matches[1];
+            $usedImageNumbers[] = (int)$matches[1];
+        }
+    }
+    
+    // Déterminer les numéros déjà utilisés pour les vidéos
+    $usedVideoNumbers = [];
+    foreach ($existingVideos as $video) {
+        $filename = basename($video);
+        if (preg_match('/^(\d+)\./', $filename, $matches)) {
+            $usedVideoNumbers[] = (int)$matches[1];
         }
     }
     
     // Trier les numéros utilisés
-    sort($usedNumbers);
+    sort($usedImageNumbers);
+    sort($usedVideoNumbers);
     
     // Fonction pour trouver le prochain numéro disponible
     function findNextAvailableNumber($usedNumbers) {
-        $nextNumber = 1; // On commence à 1
+        $nextNumber = 1;
         foreach ($usedNumbers as $number) {
             if ($number == $nextNumber) {
                 $nextNumber++;
             } else {
-                // On a trouvé un trou dans la séquence
                 break;
             }
         }
         return $nextNumber;
     }
     
-    $uploadCount = 0;
+    $imageUploadCount = 0;
+    $videoUploadCount = 0;
     $errorCount = 0;
+    $debugMessages = [];
     
     // Traiter chaque fichier
     foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
         if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
             $fileName = $_FILES['images']['name'][$key];
             $fileType = $_FILES['images']['type'][$key];
+            $fileSize = $_FILES['images']['size'][$key];
+            
+            // Debug: ajouter des informations sur le fichier
+            $debugMessages[] = "Fichier: $fileName, Type: $fileType, Taille: " . round($fileSize/1024/1024, 2) . "MB";
+            
+            // Détecter le type de fichier par extension aussi (pour plus de fiabilité)
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
+            
+            $isImage = (strpos($fileType, 'image/') === 0) || in_array($extension, $imageExtensions);
+            $isVideo = (strpos($fileType, 'video/') === 0) || in_array($extension, $videoExtensions);
             
             // Vérifier si c'est une image
-            if (strpos($fileType, 'image/') === 0) {
-                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                
-                // Trouver le prochain numéro disponible
-                $nextNumber = findNextAvailableNumber($usedNumbers);
-                $usedNumbers[] = $nextNumber; // Ajouter ce numéro à la liste des utilisés
-                sort($usedNumbers); // Retrier la liste
+            if ($isImage) {
+                // Trouver le prochain numéro disponible pour les images
+                $nextNumber = findNextAvailableNumber($usedImageNumbers);
                 
                 $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
-                $destination = $projectDir . $newFileName;
+                $destination = $imageProjectDir . $newFileName;
+                
+                // Vérifier si le fichier existe déjà (sécurité supplémentaire)
+                while (file_exists($destination)) {
+                    $nextNumber++;
+                    $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                    $destination = $imageProjectDir . $newFileName;
+                }
                 
                 if (move_uploaded_file($tmp_name, $destination)) {
-                    $uploadCount++;
+                    $imageUploadCount++;
+                    $usedImageNumbers[] = $nextNumber;
+                    sort($usedImageNumbers);
+                    $debugMessages[] = "✓ Image uploadée: $newFileName";
+                    
+                    // Forcer la synchronisation du fichier
+                    if (function_exists('fsync')) {
+                        $handle = fopen($destination, 'r');
+                        if ($handle) {
+                            fsync($handle);
+                            fclose($handle);
+                        }
+                    }
                 } else {
                     $errorCount++;
+                    $debugMessages[] = "✗ Erreur upload image: $fileName";
+                }
+            }
+            // Vérifier si c'est une vidéo
+            elseif ($isVideo) {
+                // Trouver le prochain numéro disponible pour les vidéos
+                $nextNumber = findNextAvailableNumber($usedVideoNumbers);
+                
+                $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                $destination = $videoProjectDir . $newFileName;
+                
+                // Vérifier si le fichier existe déjà
+                while (file_exists($destination)) {
+                    $nextNumber++;
+                    $newFileName = sprintf("%02d.%s", $nextNumber, $extension);
+                    $destination = $videoProjectDir . $newFileName;
+                }
+                
+                if (move_uploaded_file($tmp_name, $destination)) {
+                    $videoUploadCount++;
+                    $usedVideoNumbers[] = $nextNumber;
+                    sort($usedVideoNumbers);
+                    $debugMessages[] = "✓ Vidéo uploadée: $newFileName";
+                } else {
+                    $errorCount++;
+                    $debugMessages[] = "✗ Erreur upload vidéo: $fileName";
                 }
             } else {
                 $errorCount++;
+                $debugMessages[] = "✗ Type de fichier non supporté: $fileName (Type: $fileType, Extension: $extension)";
             }
+        } else {
+            $errorCount++;
+            $errorMsg = '';
+            switch ($_FILES['images']['error'][$key]) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $errorMsg = 'Fichier trop volumineux';
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $errorMsg = 'Upload partiel';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $errorMsg = 'Aucun fichier';
+                    break;
+                default:
+                    $errorMsg = 'Erreur inconnue (' . $_FILES['images']['error'][$key] . ')';
+            }
+            $debugMessages[] = "✗ Erreur fichier: " . $_FILES['images']['name'][$key] . " - $errorMsg";
         }
     }
     
     // Préparer les messages pour la session
-    if ($uploadCount > 0) {
-        $_SESSION['message'] = "$uploadCount image(s) téléchargée(s) avec succès.";
+    $messages = [];
+    if ($imageUploadCount > 0) {
+        $messages[] = "$imageUploadCount image(s) téléchargée(s)";
     }
-    if ($errorCount > 0) {
-        $_SESSION['error'] = "$errorCount image(s) n'ont pas pu être téléchargées.";
+    if ($videoUploadCount > 0) {
+        $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
     }
     
+    if (!empty($messages)) {
+        $_SESSION['message'] = implode(' et ', $messages) . " avec succès.";
+    }
+    if ($errorCount > 0) {
+        $_SESSION['error'] = "$errorCount fichier(s) n'ont pas pu être téléchargés.";
+    }
+    
+    // En mode debug, ajouter les messages de debug
+    if (isset($_GET['debug'])) {
+        $_SESSION['debug'] = implode('<br>', $debugMessages);
+    }
+    
+    // Forcer plusieurs fois la mise à jour du cache et attendre
+    clearstatcache();
+    usleep(200000); // 0.2 seconde
+    clearstatcache();
+    
     // Rediriger pour éviter la résoumission du formulaire
-    header("Location: manage_images.php?project=" . $projectId);
+    header("Location: manage_images.php?project=" . $projectId . "&refreshed=1");
     exit;
 }
 
-// Récupérer les images du projet et les trier par nom de fichier (pour assurer l'ordre numérique)
+// Récupérer les images et vidéos du projet et les trier par nom de fichier (pour assurer l'ordre numérique)
 $projectDir = "../img/projects/" . $project['slug'] . "/";
+$videoDir = "../videos/projects/" . $project['slug'] . "/";
 $images = [];
+$videos = [];
+
 if (is_dir($projectDir)) {
+    // Forcer la mise à jour du cache
+    clearstatcache();
+    
+    // Méthode 1: Essayer avec glob() (méthode actuelle)
     $images = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
     
+    // Méthode 2: Si glob() ne fonctionne pas, utiliser readdir() comme fallback
+    if (empty($images)) {
+        $handle = opendir($projectDir);
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $tempImages = [];
+        
+        while (false !== ($file = readdir($handle))) {
+            if ($file != '.' && $file != '..') {
+                $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                if (in_array($extension, $imageExtensions)) {
+                    $tempImages[] = $projectDir . $file;
+                }
+            }
+        }
+        closedir($handle);
+        $images = $tempImages;
+    }
+    
     // Trier les images par nom de fichier pour maintenir l'ordre numérique
-    usort($images, function($a, $b) {
+    if (!empty($images)) {
+        usort($images, function($a, $b) {
+            return strnatcmp(basename($a), basename($b));
+        });
+    }
+}
+
+if (is_dir($videoDir)) {
+    // Forcer la mise à jour du cache
+    clearstatcache();
+    
+    // Récupérer les vidéos et les trier par nom de fichier
+    $videos = glob($videoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+    usort($videos, function($a, $b) {
         return strnatcmp(basename($a), basename($b));
     });
 }
@@ -282,8 +430,8 @@ ob_end_flush();
     <div class="px-6 py-6">
         <div class="flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Gestion des images</h1>
-                <p class="text-gray-600 mt-1"><?php echo htmlspecialchars($project['title']); ?></p>
+                <h1 class="text-2xl font-bold text-gray-900">Gestion des médias</h1>
+                <p class="text-gray-600 mt-1"><?php echo htmlspecialchars($project['title']); ?> • <?php echo count($images); ?> image(s) • <?php echo count($videos); ?> vidéo(s)</p>
             </div>
             <div class="flex items-center space-x-3">
                 <a href="../project.php?project=<?php echo urlencode($project['slug']); ?>" 
@@ -297,7 +445,7 @@ ob_end_flush();
                     <span class="text-gray-400">/</span>
                     <a href="projects.php" class="text-gray-500 hover:text-gray-700">Projets</a>
                     <span class="text-gray-400">/</span>
-                    <span class="text-gray-900 font-medium">Images</span>
+                    <span class="text-gray-900 font-medium">Médias</span>
                 </nav>
             </div>
         </div>
@@ -352,6 +500,18 @@ ob_end_flush();
             </div>
         </div>
     <?php endif; ?>
+    <?php if (isset($_SESSION['debug'])): ?>
+        <div class="p-4 border-l-4 border-yellow-400 bg-yellow-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-bug text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700"><?php echo $_SESSION['debug']; unset($_SESSION['debug']); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
             <div class="flex items-center">
@@ -359,8 +519,8 @@ ob_end_flush();
                     <i class="fas fa-upload text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold">Ajouter des images</h3>
-                    <p class="text-blue-100 text-sm">Téléchargez plusieurs images à la fois</p>
+                    <h3 class="text-lg font-semibold">Ajouter des images et vidéos</h3>
+                    <p class="text-blue-100 text-sm">Téléchargez plusieurs images et vidéos à la fois</p>
                 </div>
             </div>
         </div>
@@ -368,7 +528,7 @@ ob_end_flush();
             <form method="post" enctype="multipart/form-data" id="upload-form" class="space-y-6">
                 <div>
                     <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
-                        Sélectionner des images <span class="text-red-500">*</span>
+                        Sélectionner des images et vidéos <span class="text-red-500">*</span>
                     </label>
                     <div class="flex items-center justify-center w-full">
                         <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
@@ -377,15 +537,15 @@ ob_end_flush();
                                     <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
                                 </div>
                                 <p class="mb-2 text-sm text-gray-500">
-                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos images
+                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos fichiers
                                 </p>
-                                <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
+                                <p class="text-xs text-gray-500">Images (PNG, JPG, JPEG, GIF) ou Vidéos (MP4, AVI, MOV, etc.)</p>
                             </div>
-                            <div id="preview-container" class="hidden w-full p-4">
+                            <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                 </div>
                             </div>
-                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*" required>
+                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
                         </label>
                     </div>
                     <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
@@ -420,12 +580,31 @@ ob_end_flush();
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Images actuelles</h3>
-                    <p class="text-sm text-gray-600 mt-1"><?php echo count($images); ?> image(s) • La première image sera utilisée comme image principale</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Médias du projet</h3>
+                    <p class="text-sm text-gray-600 mt-1"><?php echo count($images); ?> image(s) • <?php echo count($videos); ?> vidéo(s) • La première image sera utilisée comme image principale</p>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <!-- Filtres de type de média -->
+                    <div id="media-filters" class="flex items-center space-x-1 mr-4">
+                        <button type="button" onclick="filterMedia('all')" id="filter-all"
+                                class="media-filter-btn active inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-th mr-1"></i>
+                            Tout
+                        </button>
+                        <button type="button" onclick="filterMedia('images')" id="filter-images"
+                                class="media-filter-btn inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-images mr-1"></i>
+                            Photos
+                        </button>
+                        <button type="button" onclick="filterMedia('videos')" id="filter-videos"
+                                class="media-filter-btn inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-video mr-1"></i>
+                            Vidéos
+                        </button>
+                    </div>
+
                     <div id="bulk-actions" class="hidden space-x-2">
-                        <button type="button" onclick="deleteSelectedImages()" disabled
+                        <button type="button" onclick="deleteSelectedItems()" disabled
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
                             <i class="fas fa-trash mr-2"></i>
                             Supprimer (<span id="selected-count">0</span>)
@@ -437,13 +616,14 @@ ob_end_flush();
                         </button>
                     </div>
                     <div id="normal-actions" class="flex items-center space-x-2">
-                        <?php if (!empty($images)): ?>
+                        <?php if (!empty($images) || !empty($videos)): ?>
                             <button type="button" onclick="toggleSelectionMode()"
                                     class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                                 <i class="fas fa-check-square mr-2"></i>
                                 Sélection multiple
                             </button>
                         <?php endif; ?>
+                        
                         <button id="saveOrder" class="hidden inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
                             <i class="fas fa-save mr-2"></i>
                             Enregistrer l'ordre
@@ -476,7 +656,7 @@ ob_end_flush();
             </div>
         </div>
         <div class="p-6">
-            <?php if (!empty($images)): ?>
+            <?php if (!empty($images) || !empty($videos)): ?>
                 <div id="ajax-messages" class="mb-6"></div>
                 <div id="selection-controls" class="hidden mb-6">
                     <div class="flex items-center space-x-3">
@@ -509,18 +689,21 @@ ob_end_flush();
                         </div>
                     </div>
                 </div>
-                <div id="imageGallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+                <!-- Conteneur principal pour tous les médias -->
+                <div id="mediaGallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Images -->
                     <?php foreach ($images as $index => $image): ?>
-                        <div class="image-container relative group" data-image="<?php echo basename($image); ?>">
-                            <div class="image-checkbox absolute top-3 right-3 z-10 hidden">
-                                <input type="checkbox" class="image-select h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                       value="<?php echo htmlspecialchars(basename($image)); ?>" onchange="updateSelectionCount()">
+                        <div class="media-item image-container relative group media-type-image" data-image="<?php echo basename($image); ?>" data-type="image">
+                            <div class="media-checkbox absolute top-3 right-3 z-10 hidden">
+                                <input type="checkbox" class="media-select h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                                       value="<?php echo htmlspecialchars(basename($image)); ?>" data-type="image" onchange="updateSelectionCount()">
                             </div>
                             <div class="drag-handle hidden cursor-move bg-blue-50 border border-blue-200 text-center py-2 rounded-t-lg">
                                 <i class="fas fa-grip-vertical text-blue-600"></i>
                                 <span class="text-xs text-blue-700 ml-2">Déplacer</span>
                             </div>
-                            <div class="image-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div class="media-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <div class="aspect-w-16 aspect-h-12 bg-gray-100">
                                     <img src="<?php echo $image; ?>" 
                                          alt="Image" 
@@ -536,12 +719,61 @@ ob_end_flush();
                                                     Image principale
                                                 </span>
                                             <?php endif; ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                                <i class="fas fa-image mr-1"></i>
+                                                Image
+                                            </span>
                                         </div>
                                     </div>
-                                    <div class="image-actions mt-3">
+                                    <div class="media-actions mt-3">
                                         <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" 
                                            class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Supprimer
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <!-- Vidéos -->
+                    <?php foreach ($videos as $index => $video): ?>
+                        <div class="media-item video-container relative group media-type-video" data-video="<?php echo basename($video); ?>" data-type="video">
+                            <div class="media-checkbox absolute top-3 right-3 z-10 hidden">
+                                <input type="checkbox" class="media-select h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded" 
+                                       value="<?php echo htmlspecialchars(basename($video)); ?>" data-type="video" onchange="updateSelectionCount()">
+                            </div>
+                            <div class="media-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-16 aspect-h-12 bg-gray-100 relative">
+                                    <video class="w-full h-48 object-cover" preload="metadata" muted>
+                                        <source src="<?php echo $video; ?>" type="video/<?php echo pathinfo($video, PATHINFO_EXTENSION); ?>">
+                                    </video>
+                                    <!-- Overlay de lecture -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer" onclick="openVideoModal('<?php echo $video; ?>')">
+                                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-play text-white text-lg"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900"><?php echo basename($video); ?></h4>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                                                <i class="fas fa-video mr-1"></i>
+                                                Vidéo
+                                            </span>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                <?php echo round(filesize($video) / 1024 / 1024, 1); ?> MB
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="media-actions mt-3">
+                                        <a href="delete_video.php?project=<?php echo $projectId; ?>&video=<?php echo urlencode(basename($video)); ?>" 
+                                           class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?');">
                                             <i class="fas fa-trash mr-1"></i>
                                             Supprimer
                                         </a>
@@ -554,10 +786,10 @@ ob_end_flush();
             <?php else: ?>
                 <div class="text-center py-12">
                     <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-images text-gray-400 text-2xl"></i>
+                        <i class="fas fa-photo-video text-gray-400 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune image</h3>
-                    <p class="text-gray-600 mb-6">Ce projet n'a pas encore d'images. Utilisez le formulaire ci-dessus pour ajouter vos premières images.</p>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun média</h3>
+                    <p class="text-gray-600 mb-6">Ce projet n'a pas encore d'images ou de vidéos. Utilisez le formulaire ci-dessus pour ajouter vos premiers médias.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -583,8 +815,8 @@ function toggleSelectionMode() {
     
     if (selectionMode) {
         // Activer le mode sélection
-        $('.image-checkbox').removeClass('hidden');
-        $('.image-card').addClass('selection-mode');
+        $('.media-checkbox').removeClass('hidden');
+        $('.media-card').addClass('selection-mode');
         $('#selection-controls').removeClass('hidden');
         $('#bulk-actions').removeClass('hidden');
         $('#normal-actions').addClass('hidden');
@@ -600,9 +832,9 @@ function exitSelectionMode() {
     selectionMode = false;
     
     // Désactiver le mode sélection
-    $('.image-checkbox').addClass('hidden');
-    $('.image-card').removeClass('selection-mode selected');
-    $('.image-select').prop('checked', false);
+    $('.media-checkbox').addClass('hidden');
+    $('.media-card').removeClass('selection-mode selected');
+    $('.media-select').prop('checked', false);
     $('#selection-controls').addClass('hidden');
      $('#bulk-actions').addClass('hidden');
      $('#normal-actions').removeClass('hidden');
@@ -618,19 +850,19 @@ function clearSelection() {
 }
 
 function selectAll() {
-    $('.image-select').prop('checked', true);
-    $('.image-card').addClass('selected');
+    $('.media-select').prop('checked', true);
+    $('.media-card').addClass('selected');
     updateSelectionCount();
 }
 
 function selectNone() {
-    $('.image-select').prop('checked', false);
-    $('.image-card').removeClass('selected');
+    $('.media-select').prop('checked', false);
+    $('.media-card').removeClass('selected');
     updateSelectionCount();
 }
 
 function invertSelection() {
-    $('.image-select').each(function() {
+    $('.media-select').each(function() {
         $(this).prop('checked', !$(this).prop('checked'));
         $(this).trigger('change');
     });
@@ -638,12 +870,12 @@ function invertSelection() {
 }
 
 function updateSelectionCount() {
-    const selectedCount = $('.image-select:checked').length;
+    const selectedCount = $('.media-select:checked').length;
     $('#selected-count').text(selectedCount);
     
     // Mettre à jour l'apparence des cartes
-    $('.image-select').each(function() {
-        const card = $(this).closest('.image-container').find('.image-card');
+    $('.media-select').each(function() {
+        const card = $(this).closest('.media-item').find('.media-card');
         if ($(this).is(':checked')) {
             card.addClass('selected');
         } else {
@@ -653,15 +885,15 @@ function updateSelectionCount() {
     
     // Activer/désactiver le bouton de suppression
     if (selectedCount > 0) {
-        $('#bulk-actions button[onclick="deleteSelectedImages()"]').prop('disabled', false);
+        $('#bulk-actions button[onclick="deleteSelectedItems()"]').prop('disabled', false);
     } else {
-        $('#bulk-actions button[onclick="deleteSelectedImages()"]').prop('disabled', true);
+        $('#bulk-actions button[onclick="deleteSelectedItems()"]').prop('disabled', true);
     }
 }
 
 function deleteSelectedImages() {
     const selectedImages = [];
-    $('.image-select:checked').each(function() {
+    $('.media-select:checked').each(function() {
         selectedImages.push($(this).val());
     });
     
@@ -712,11 +944,11 @@ function deleteSelectedImages() {
             if (response.success && response.deleted > 0) {
                 // Supprimer les images de l'interface
                 selectedImages.forEach(function(imageName) {
-                    $(`.image-container[data-image="${imageName}"]`).fadeOut(300, function() {
+                    $(`.media-item[data-image="${imageName}"]`).fadeOut(300, function() {
                         $(this).remove();
                         
                         // Si plus d'images, recharger la page pour mettre à jour l'interface
-                        if ($('.image-container').length === 0) {
+                        if ($('.media-item').length === 0) {
                             location.reload();
                         }
                     });
@@ -754,465 +986,280 @@ function deleteSelectedImages() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const imageGallery = document.getElementById('imageGallery');
-    const enableReorderBtn = document.getElementById('enableReorder');
-    const saveOrderBtn = document.getElementById('saveOrder');
-    const cancelReorderBtn = document.getElementById('cancelReorder');
-    const reorderInstructions = document.getElementById('reorderInstructions');
+// Fonctions de filtrage des médias
+function filterMedia(type) {
+    // Réinitialiser les boutons de filtre
+    document.querySelectorAll('.media-filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-gray-700', 'bg-white');
+    });
     
-    let sortable = null;
-    let originalOrder = [];
+    // Activer le bouton sélectionné
+    const activeBtn = document.getElementById(`filter-${type}`);
+    activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
+    activeBtn.classList.remove('text-gray-700', 'bg-white');
     
-    // Vérifier que les éléments existent
-    if (!imageGallery || !enableReorderBtn || !saveOrderBtn || !cancelReorderBtn) {
-        console.log('Certains éléments du DOM ne sont pas trouvés');
+    // Filtrer les éléments
+    const mediaItems = document.querySelectorAll('.media-item');
+    
+    mediaItems.forEach(item => {
+        const itemType = item.getAttribute('data-type');
+        
+        if (type === 'all') {
+            item.style.display = 'block';
+        } else if (type === 'images' && itemType === 'image') {
+            item.style.display = 'block';
+        } else if (type === 'videos' && itemType === 'video') {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour supprimer les éléments sélectionnés (images et vidéos)
+function deleteSelectedItems() {
+    const selectedItems = [];
+    const selectedImages = [];
+    const selectedVideos = [];
+    
+    $('.media-select:checked').each(function() {
+        const value = $(this).val();
+        const type = $(this).data('type');
+        
+        selectedItems.push({name: value, type: type});
+        
+        if (type === 'image') {
+            selectedImages.push(value);
+        } else if (type === 'video') {
+            selectedVideos.push(value);
+        }
+    });
+    
+    if (selectedItems.length === 0) {
+        alert('Aucun média sélectionné');
         return;
     }
     
-    // Enregistrer l'ordre original des images
-    function captureOriginalOrder() {
-        originalOrder = [];
-        document.querySelectorAll('.image-container').forEach(container => {
-            originalOrder.push(container.getAttribute('data-image'));
-        });
+    let confirmText = `Êtes-vous sûr de vouloir supprimer ${selectedItems.length} média(s) sélectionné(s) ?`;
+    if (selectedImages.length > 0 && selectedVideos.length > 0) {
+        confirmText += `\n(${selectedImages.length} image(s) et ${selectedVideos.length} vidéo(s))`;
+    }
+    confirmText += '\nCette action est irréversible.';
+    
+    if (!confirm(confirmText)) {
+        return;
     }
     
-    // Activer le mode de réorganisation
-    enableReorderBtn.addEventListener('click', function() {
-        // Vérifier qu'on n'est pas en mode sélection
-        if (selectionMode) {
-            alert('Veuillez d\'abord quitter le mode de sélection multiple avant d\'activer la réorganisation');
-            return;
-        }
-        
-        reorderMode = true;
-        captureOriginalOrder();
-        
-        // Mettre à jour l'interface
-        enableReorderBtn.classList.add('hidden');
-        saveOrderBtn.classList.remove('hidden');
-        cancelReorderBtn.classList.remove('hidden');
-        if (reorderInstructions) {
-            reorderInstructions.classList.remove('hidden');
-        }
-        
-        // Afficher les poignées de glissement et masquer les boutons de suppression
-        const dragHandles = document.querySelectorAll('.drag-handle');
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-        const imageCheckboxes = document.querySelectorAll('.image-checkbox');
-        
-        dragHandles.forEach(handle => {
-            handle.classList.remove('hidden');
-        });
-        
-        deleteButtons.forEach(btn => {
-            btn.style.display = 'none';
-        });
-        
-        // S'assurer que les cases à cocher sont masquées et désactiver le bouton de sélection
-        imageCheckboxes.forEach(checkbox => {
-            checkbox.classList.add('hidden');
-        });
-        
-        // Désactiver le bouton de sélection multiple pendant la réorganisation
-        const selectionButton = document.querySelector('button[onclick="toggleSelectionMode()"]');
-        if (selectionButton) {
-            selectionButton.disabled = true;
-        }
-        
-        // Activer Sortable.js
-        sortable = new Sortable(imageGallery, {
-            animation: 150,
-            handle: '.drag-handle',
-            onEnd: function() {
-                updateMainImageBadge();
-            }
-        });
-    });
+    // Désactiver le bouton pendant la suppression
+    const deleteButton = $('#bulk-actions button[onclick="deleteSelectedItems()"]');
+    const originalText = deleteButton.html();
+    deleteButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Suppression...');
     
-    // Mettre à jour le badge de l'image principale
-    function updateMainImageBadge() {
-        const badges = document.querySelectorAll('.main-image-badge');
-        badges.forEach(badge => {
-            badge.style.display = 'none';
-        });
+    // Envoyer les requêtes AJAX séparément pour images et vidéos
+    let promises = [];
+    
+    if (selectedImages.length > 0) {
+        promises.push(
+            $.ajax({
+                url: 'delete_multiple_project_images.php',
+                type: 'POST',
+                data: {
+                    action: 'delete_multiple',
+                    project: '<?php echo $projectId; ?>',
+                    images: selectedImages
+                },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    if (selectedVideos.length > 0) {
+        promises.push(
+            $.ajax({
+                url: 'delete_multiple_project_videos.php',
+                type: 'POST',
+                data: {
+                    action: 'delete_multiple',
+                    project: '<?php echo $projectId; ?>',
+                    videos: selectedVideos
+                },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    Promise.all(promises).then(function(responses) {
+        let totalDeleted = 0;
+        let messages = [];
+        let hasError = false;
         
-        const firstImage = imageGallery.querySelector('.image-container');
-        if (firstImage) {
-            const badge = firstImage.querySelector('.main-image-badge');
-            if (badge) {
-                badge.style.display = 'inline-flex';
+        responses.forEach(function(response) {
+            if (response.success) {
+                totalDeleted += response.deleted || 0;
+                if (response.message) {
+                    messages.push(response.message);
+                }
             } else {
-                const newBadge = document.createElement('span');
-                newBadge.className = 'main-image-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1';
-                newBadge.innerHTML = '<i class="fas fa-star mr-1"></i>Image principale';
-                const cardText = firstImage.querySelector('.p-4');
-                if (cardText) {
-                    cardText.appendChild(newBadge);
+                hasError = true;
+                if (response.message) {
+                    messages.push(response.message);
                 }
             }
-        }
-    }
-    
-    // Enregistrer le nouvel ordre
-    saveOrderBtn.addEventListener('click', function() {
-        const imageOrder = [];
-        document.querySelectorAll('.image-container').forEach(container => {
-            imageOrder.push(container.getAttribute('data-image'));
         });
         
-        // Désactiver le bouton pendant l'enregistrement
-        saveOrderBtn.disabled = true;
-        saveOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
+        // Afficher le message de résultat
+        let alertClass = !hasError ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50';
+        let iconClass = !hasError ? 'text-green-400' : 'text-red-400';
+        let textClass = !hasError ? 'text-green-700' : 'text-red-700';
+        let icon = !hasError ? 'fa-check-circle' : 'fa-exclamation-circle';
         
-        // Envoyer l'ordre au serveur via AJAX
-        const formData = new FormData();
-        formData.append('reorder', 'true');
-        imageOrder.forEach(img => {
-            formData.append('imageOrder[]', img);
-        });
+        let alertHtml = `<div class="p-4 border-l-4 ${alertClass} rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas ${icon} ${iconClass}"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm ${textClass}">${messages.join('<br>')}</p>
+                </div>
+            </div>
+        </div>`;
         
-        fetch('manage_images.php?project=<?php echo $projectId; ?>', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if(response.ok) {
-                return response.json().catch(() => {
-                    // Si la conversion en JSON échoue, recharger la page
-                    location.reload();
-                    return { success: true };
+        $('#ajax-messages').html(alertHtml);
+        
+        if (totalDeleted > 0) {
+            // Supprimer les éléments de l'interface
+            selectedItems.forEach(function(item) {
+                $(`.media-item[data-${item.type}="${item.name}"]`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Si plus de médias, recharger la page pour mettre à jour l'interface
+                    if ($('.media-item').length === 0) {
+                        location.reload();
+                    }
                 });
-            } else {
-                throw new Error('Erreur réseau');
-            }
-        })
-        .then(data => {
-            if (data && data.success) {
-                location.reload();
-            } else if (data && data.message) {
-                alert('Erreur: ' + data.message);
-                // Réactiver le bouton
-                saveOrderBtn.disabled = false;
-                saveOrderBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Enregistrer l\'ordre';
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            location.reload();
-        });
-    });
-    
-    // Annuler la réorganisation
-    cancelReorderBtn.addEventListener('click', function() {
-        exitReorderMode();
-    });
-    
-    // Fonction pour quitter le mode réorganisation
-    function exitReorderMode() {
-        reorderMode = false;
-        
-        // Restaurer l'ordre original
-        const fragment = document.createDocumentFragment();
-        originalOrder.forEach(imageName => {
-            const container = document.querySelector(`.image-container[data-image="${imageName}"]`);
-            if (container) {
-                fragment.appendChild(container);
-            }
-        });
-        
-        imageGallery.innerHTML = '';
-        imageGallery.appendChild(fragment);
-        
-        // Réinitialiser l'interface
-        enableReorderBtn.classList.remove('hidden');
-        saveOrderBtn.classList.add('hidden');
-        cancelReorderBtn.classList.add('hidden');
-        if (reorderInstructions) {
-            reorderInstructions.classList.add('hidden');
+            });
+            
+            // Sortir du mode sélection
+            setTimeout(function() {
+                exitSelectionMode();
+            }, 500);
         }
         
-        // Masquer les poignées et réafficher les boutons
-        const dragHandles = document.querySelectorAll('.drag-handle');
-        const deleteButtons = document.querySelectorAll('.delete-btn');
+        // Réactiver le bouton
+        deleteButton.prop('disabled', false).html(originalText);
         
-        dragHandles.forEach(handle => {
-            handle.classList.add('hidden');
-        });
+        // Faire défiler vers le message
+        $('html, body').animate({
+            scrollTop: $('#ajax-messages').offset().top - 100
+        }, 500);
         
-        deleteButtons.forEach(btn => {
-            btn.style.display = 'inline-flex';
-        });
+    }).catch(function(error) {
+        console.log('Erreur AJAX:', error);
+        $('#ajax-messages').html(`<div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700">Erreur lors de la suppression des médias. Veuillez réessayer.</p>
+                </div>
+            </div>
+        </div>`);
         
-        // Réactiver le bouton de sélection multiple
-        const selectionButton = document.querySelector('button[onclick="toggleSelectionMode()"]');
-        if (selectionButton) {
-            selectionButton.disabled = false;
-        }
-        
-        // Réinitialiser le badge de l'image principale
-        updateMainImageBadge();
-        
-        // Détruire l'objet Sortable
-        if (sortable) {
-            sortable.destroy();
-            sortable = null;
-        }
-    }
-    
-    // Permettre de cliquer sur la carte pour sélectionner/désélectionner
-    $(document).on('click', '.image-card', function(e) {
-        // Ne fonctionner que si on est en mode sélection
-        if (!selectionMode) return;
-        
-        // Éviter le conflit avec les boutons d'action et les poignées de drag
-        if ($(e.target).closest('.image-actions, .image-checkbox, .drag-handle').length > 0) {
-            return;
-        }
-        
-        const checkbox = $(this).find('.image-select');
-        checkbox.prop('checked', !checkbox.prop('checked'));
-        checkbox.trigger('change');
+        deleteButton.prop('disabled', false).html(originalText);
     });
-    
-    // Gestion avancée du drag and drop pour l'upload avec prévisualisation
-    console.log('Script drag & drop initialisé (manage_images)'); // Debug
-    
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('images');
-    const dropContent = document.getElementById('drop-content');
-    const previewContainer = document.getElementById('preview-container');
-    const previewGrid = document.getElementById('preview-grid');
-    const fileInfo = document.getElementById('file-info');
-    const fileCount = document.getElementById('file-count');
-    const uploadForm = document.getElementById('upload-form');
-    const uploadBtn = document.getElementById('upload-btn');
-    const uploadProgress = document.getElementById('upload-progress');
-    const progressBar = document.getElementById('progress-bar');
-    const progressPercent = document.getElementById('progress-percent');
+}
 
-    // Vérification que tous les éléments existent
-    if (!dropZone || !fileInput || !dropContent || !previewContainer || !previewGrid || 
-        !fileInfo || !fileCount || !uploadForm || !uploadBtn || !uploadProgress || 
-        !progressBar || !progressPercent) {
-        console.error('Certains éléments requis pour le drag & drop sont manquants (manage_images)');
-        console.log('dropZone:', dropZone);
-        console.log('fileInput:', fileInput);
-        console.log('dropContent:', dropContent);
-        return;
-    }
-
-    console.log('Tous les éléments trouvés, initialisation du drag & drop (manage_images)'); // Debug
-
-    // Gestion du drag and drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
-    });
-
-    dropZone.addEventListener('drop', handleDrop, false);
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    function highlight() {
-        console.log('Zone de drop activée (manage_images)'); // Debug
-        dropZone.classList.add('border-blue-500', 'bg-blue-50');
-    }
-
-    function unhighlight() {
-        console.log('Zone de drop désactivée (manage_images)'); // Debug
-        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-    }
-
-    function handleDrop(e) {
-        console.log('Fichiers déposés (manage_images)'); // Debug
-        const dt = e.dataTransfer;
-        const files = dt.files;
+// Fonction pour ouvrir la modal vidéo
+function openVideoModal(videoPath) {
+    // Créer la modal si elle n'existe pas
+    let modal = document.getElementById('videoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
         
-        console.log('Nombre de fichiers:', files.length); // Debug
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #baff00; color: #222; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; font-weight: 700;">&times;</button>
+                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
+                    <source src="" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+            </div>
+        `;
         
-        fileInput.files = files;
-        handleFiles(files);
-    }
-
-    // Gestion du changement de fichiers
-    fileInput.addEventListener('change', function(e) {
-        console.log('Fichiers sélectionnés via input (manage_images)'); // Debug
-        handleFiles(e.target.files);
-    });
-
-    function handleFiles(files) {
-        console.log('Traitement des fichiers:', files.length); // Debug
+        document.body.appendChild(modal);
         
-        if (files.length === 0) {
-            showDropContent();
-            return;
-        }
-
-        // Filtrer les fichiers image uniquement
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-        
-        console.log('Fichiers image valides:', imageFiles.length); // Debug
-        
-        if (imageFiles.length === 0) {
-            alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF)');
-            fileInput.value = '';
-            showDropContent();
-            return;
-        }
-
-        // Afficher les informations
-        fileCount.textContent = `${imageFiles.length} image(s) sélectionnée(s)`;
-        fileInfo.classList.remove('hidden');
-
-        // Générer les aperçus
-        previewGrid.innerHTML = '';
-        dropContent.classList.add('hidden');
-        previewContainer.classList.remove('hidden');
-
-        imageFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'relative group';
-                previewDiv.innerHTML = `
-                    <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
-                        <img src="${e.target.result}" class="w-full h-20 object-cover">
-                    </div>
-                    <div class="absolute top-1 right-1">
-                        <button type="button" onclick="removeFile(${index}, event)" 
-                                class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
-                `;
-                previewGrid.appendChild(previewDiv);
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // Activer le bouton d'upload
-        uploadBtn.disabled = false;
-    }
-
-    function showDropContent() {
-        dropContent.classList.remove('hidden');
-        previewContainer.classList.add('hidden');
-        fileInfo.classList.add('hidden');
-        uploadBtn.disabled = true;  
-    }
-
-    // Fonction pour supprimer un fichier (accessible globalement)
-    window.removeFile = function(index, event) {
-        // Empêcher la propagation de l'événement pour éviter d'ouvrir la sélection de fichiers
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-        
-        console.log('Suppression du fichier à l\'index:', index); // Debug
-        const dt = new DataTransfer();
-        const files = Array.from(fileInput.files);
-        
-        files.forEach((file, i) => {
-            if (i !== index) {
-                dt.items.add(file);
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeVideoModal();
             }
         });
-        
-        fileInput.files = dt.files;
-        handleFiles(fileInput.files);
-    };
-
-    // Gestion de la soumission du formulaire avec progress
-    uploadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        console.log('Soumission du formulaire (manage_images)'); // Debug
-        
-        if (fileInput.files.length === 0) {
-            alert('Veuillez sélectionner au moins une image');
-            return;
-        }
-
-        // Préparer l'upload avec progress
-        const formData = new FormData(uploadForm);
-        
-        // Afficher la barre de progression
-        uploadProgress.classList.remove('hidden');
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Téléchargement...';
-
-        // Simuler un upload avec XMLHttpRequest pour avoir le contrôle du progress
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.addEventListener('progress', function(e) {
-            if (e.lengthComputable) {
-                const percentComplete = (e.loaded / e.total) * 100;
-                progressBar.style.width = percentComplete + '%';
-                progressPercent.textContent = Math.round(percentComplete) + '%';
-            }
-        });
-
-        xhr.onload = function() {
-            console.log('Upload terminé, status:', xhr.status); // Debug
-            if (xhr.status === 200) {
-                // Redirection sera gérée par PHP
-                window.location.reload();
-            } else {
-                alert('Erreur lors du téléchargement');
-                resetUploadState();
-            }
-        };
-
-        xhr.onerror = function() {
-            console.error('Erreur réseau (manage_images)'); // Debug
-            alert('Erreur réseau lors du téléchargement');
-            resetUploadState();
-        };
-
-        xhr.open('POST', uploadForm.action || window.location.href);
-        xhr.send(formData);
-    });
-
-    function resetUploadState() {
-        uploadProgress.classList.add('hidden');
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Télécharger les images';
-        progressBar.style.width = '0%';
-        progressPercent.textContent = '0%';
     }
+    
+    const video = document.getElementById('modalVideo');
+    const source = video.querySelector('source');
+    
+    source.src = videoPath;
+    const extension = videoPath.split('.').pop().toLowerCase();
+    
+    // Déterminer le bon type MIME
+    let mimeType = 'video/mp4';
+    switch(extension) {
+        case 'mp4': mimeType = 'video/mp4'; break;
+        case 'webm': mimeType = 'video/webm'; break;
+        case 'mov': mimeType = 'video/quicktime'; break;
+        case 'avi': mimeType = 'video/x-msvideo'; break;
+        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
+        case 'flv': mimeType = 'video/x-flv'; break;
+        case 'mkv': mimeType = 'video/x-matroska'; break;
+    }
+    source.type = mimeType;
+    
+    video.load();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    video.addEventListener('loadeddata', function() {
+        video.play().catch(e => console.log('Autoplay bloqué:', e));
+    }, { once: true });
+}
 
-    // Initialiser l'état
-    showDropContent();
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
     
-    console.log('Drag & drop complètement initialisé (manage_images)'); // Debug
-    
-    // Initialiser les événements quand la page est chargée
-    updateSelectionCount();
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeVideoModal();
+    }
 });
+
+// Initialiser l'état général
+updateSelectionCount();
 </script>
 
 <style>
-.image-card.selection-mode {
+.media-card.selection-mode {
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.image-card.selected {
+.media-card.selected {
     border: 2px solid #3b82f6;
     background-color: #eff6ff;
     transform: scale(0.98);
@@ -1228,13 +1275,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 @media (max-width: 640px) {
-    #imageGallery {
+    #mediaGallery {
         grid-template-columns: repeat(1, minmax(0, 1fr));
     }
 }
 
 @media (min-width: 640px) and (max-width: 768px) {
-    #imageGallery {
+    #mediaGallery {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

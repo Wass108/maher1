@@ -317,7 +317,7 @@ ob_end_flush();
                                         </p>
                                         <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
                                     </div>
-                                    <div id="preview-container" class="hidden w-full p-4">
+                                    <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                         </div>
                                     </div>

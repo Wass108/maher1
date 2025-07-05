@@ -264,8 +264,8 @@ ob_end_flush();
                                         </p>
                                         <p class="text-xs text-gray-500">MP4, AVI, MOV, WMV, FLV, WEBM, MKV (plusieurs fichiers acceptés)</p>
                                     </div>
-                                    <div id="preview-container" class="hidden w-full p-4">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="preview-grid">
+                                    <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                         </div>
                                     </div>
                                     <input id="videos" name="videos[]" type="file" class="hidden" multiple accept="video/*" required>

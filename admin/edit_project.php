@@ -192,16 +192,18 @@ ob_end_flush();
                     <h3 class="text-lg font-semibold text-gray-900">Informations du projet</h3>
                     <p class="text-sm text-gray-600 mt-1">Modifiez les détails de votre projet</p>
                 </div>
-                <a href="manage_images.php?project=<?php echo $projectId; ?>" 
-                   class="inline-flex items-center px-4 py-2 border border-purple-600 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
-                    <i class="fas fa-images mr-2"></i>
-                    Gérer les images
-                </a>
-                <a href="manage_videos.php?project=<?php echo $projectId; ?>"
-                   class="inline-flex items-center px-4 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
-                    <i class="fas fa-video mr-2"></i>
-                    Gérer les vidéos
-                </a>
+                <div class="flex items-center space-x-3">
+                    <a href="manage_images.php?project=<?php echo $projectId; ?>" 
+                       class="inline-flex items-center px-4 py-2 border border-purple-600 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
+                        <i class="fas fa-images mr-2"></i>
+                        Gérer les images
+                    </a>
+                    <a href="manage_videos.php?project=<?php echo $projectId; ?>"
+                       class="inline-flex items-center px-4 py-2 border border-orange-600 rounded-md text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
+                        <i class="fas fa-video mr-2"></i>
+                        Gérer les vidéos
+                    </a>
+                </div>
             </div>
         </div>
         <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id=' . $projectId); ?>" class="p-6 space-y-6">
@@ -335,7 +337,7 @@ ob_end_flush();
             <div class="bg-blue-50 rounded-lg p-6">
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Aperçu et actions</h4>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-eye text-blue-600"></i>
@@ -368,6 +370,25 @@ ob_end_flush();
                                     $imageCount = count($images);
                                 }
                                 echo $imageCount . " image(s)";
+                                ?>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-video text-orange-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Vidéos</p>
+                            <p class="text-xs text-gray-600">
+                                <?php 
+                                $videoCount = 0;
+                                $videoFolder = "../videos/projects/" . $project['slug'] . "/";
+                                if (is_dir($videoFolder)) {
+                                    $videos = glob($videoFolder . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+                                    $videoCount = count($videos);
+                                }
+                                echo $videoCount . " vidéo(s)";
                                 ?>
                             </p>
                         </div>

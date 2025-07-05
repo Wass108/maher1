@@ -49,6 +49,22 @@ if ($result) {
         rmdir($projectDir);
     }
     
+    // Supprimer le dossier des vidéos du projet
+    $videoProjectDir = "../videos/projects/" . $project['slug'] . "/";
+    
+    if (is_dir($videoProjectDir)) {
+        // Supprimer tous les fichiers vidéo dans le dossier
+        $videoFiles = glob($videoProjectDir . "*.*");
+        foreach($videoFiles as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        
+        // Supprimer le dossier vidéo
+        rmdir($videoProjectDir);
+    }
+    
     $_SESSION['message'] = "Le projet \"" . htmlspecialchars($project['title']) . "\" a été supprimé avec succès.";
 } else {
     $_SESSION['message'] = "Une erreur est survenue lors de la suppression du projet.";
