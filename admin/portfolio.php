@@ -25,6 +25,7 @@ function getExistingCategories($portfolioMainDir) {
 }
 
 $portfolioMainDir = "../img/portfolio/";
+$portfolioVideoDir = "../videos/portfolio/";
 
 // Récupérer dynamiquement toutes les catégories existantes
 $categories = getExistingCategories($portfolioMainDir);
@@ -33,21 +34,26 @@ $categories = getExistingCategories($portfolioMainDir);
 $message = '';
 $error = '';
 
-// Traitement du téléchargement d'images
+// Traitement du téléchargement d'images et vidéos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
     $category = $_POST['category'] ?? '';
     
     if (!in_array($category, $categories)) {
         $_SESSION['error'] = "Catégorie invalide.";
     } else {
-        $categoryDir = $portfolioMainDir . $category . "/";
+        $imageCategoryDir = $portfolioMainDir . $category . "/";
+        $videoCategoryDir = $portfolioVideoDir . $category . "/";
         
-        // Créer le dossier s'il n'existe pas
-        if (!is_dir($categoryDir)) {
-            mkdir($categoryDir, 0777, true);
+        // Créer les dossiers s'ils n'existent pas
+        if (!is_dir($imageCategoryDir)) {
+            mkdir($imageCategoryDir, 0777, true);
+        }
+        if (!is_dir($videoCategoryDir)) {
+            mkdir($videoCategoryDir, 0777, true);
         }
         
-        $uploadCount = 0;
+        $imageUploadCount = 0;
+        $videoUploadCount = 0;
         $errorCount = 0;
         
         // Traiter chaque fichier
@@ -56,16 +62,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
                 $fileName = $_FILES['images']['name'][$key];
                 $fileType = $_FILES['images']['type'][$key];
                 
-                // Vérifier si c'est une image
-                if (strpos($fileType, 'image/') === 0) {
-                    $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                    
-                    // Générer un nom unique basé sur le timestamp
+                // Détecter le type de fichier par extension aussi (pour plus de fiabilité)
+                $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
+                
+                $isImage = (strpos($fileType, 'image/') === 0) || in_array($extension, $imageExtensions);
+                $isVideo = (strpos($fileType, 'video/') === 0) || in_array($extension, $videoExtensions);
+                
+                if ($isImage) {
+                    // Générer un nom unique basé sur le timestamp pour les images
                     $newFileName = time() . '_' . $key . '.' . $extension;
-                    $destination = $categoryDir . $newFileName;
+                    $destination = $imageCategoryDir . $newFileName;
                     
                     if (move_uploaded_file($tmp_name, $destination)) {
-                        $uploadCount++;
+                        $imageUploadCount++;
+                    } else {
+                        $errorCount++;
+                    }
+                } elseif ($isVideo) {
+                    // Générer un nom unique basé sur le timestamp pour les vidéos
+                    $newFileName = time() . '_' . $key . '.' . $extension;
+                    $destination = $videoCategoryDir . $newFileName;
+                    
+                    if (move_uploaded_file($tmp_name, $destination)) {
+                        $videoUploadCount++;
                     } else {
                         $errorCount++;
                     }
@@ -76,11 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
         }
         
         // Messages de feedback stockés en session
-        if ($uploadCount > 0) {
-            $_SESSION['message'] = "$uploadCount image(s) téléchargée(s) avec succès dans la catégorie $category.";
+        $messages = [];
+        if ($imageUploadCount > 0) {
+            $messages[] = "$imageUploadCount image(s) téléchargée(s)";
+        }
+        if ($videoUploadCount > 0) {
+            $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
+        }
+        
+        if (!empty($messages)) {
+            $_SESSION['message'] = implode(' et ', $messages) . " avec succès dans la catégorie $category.";
         }
         if ($errorCount > 0) {
-            $_SESSION['error'] = "$errorCount image(s) n'ont pas pu être téléchargées.";
+            $_SESSION['error'] = "$errorCount fichier(s) n'ont pas pu être téléchargés.";
         }
     }
     
@@ -109,9 +138,13 @@ if (isset($_GET['delete']) && isset($_GET['category'])) {
     exit;
 }
 
-// Récupérer toutes les images par catégorie
+// Récupérer toutes les images et vidéos par catégorie
 $portfolioImages = [];
+$portfolioVideos = [];
+$portfolioMedia = []; // Nouveau tableau pour tout regrouper
+
 foreach ($categories as $category) {
+    // Images
     $categoryPath = $portfolioMainDir . $category . "/";
     $portfolioImages[$category] = [];
     
@@ -122,10 +155,31 @@ foreach ($categories as $category) {
                 'path' => $image,
                 'name' => basename($image),
                 'size' => filesize($image),
-                'url' => $image // Garder le chemin relatif complet depuis admin/
+                'url' => $image,
+                'type' => 'image'
             ];
         }
     }
+    
+    // Vidéos
+    $categoryVideoPath = $portfolioVideoDir . $category . "/";
+    $portfolioVideos[$category] = [];
+    
+    if (is_dir($categoryVideoPath)) {
+        $videos = glob($categoryVideoPath . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+        foreach ($videos as $video) {
+            $portfolioVideos[$category][] = [
+                'path' => $video,
+                'name' => basename($video),
+                'size' => filesize($video),
+                'url' => $video,
+                'type' => 'video'
+            ];
+        }
+    }
+    
+    // Combiner images et vidéos pour cette catégorie
+    $portfolioMedia[$category] = array_merge($portfolioImages[$category], $portfolioVideos[$category]);
 }
 
 ob_end_flush();
@@ -265,8 +319,8 @@ ob_end_flush();
                         <i class="fas fa-upload text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="text-lg font-semibold">Ajouter des images au portfolio</h3>
-                        <p class="text-blue-100 text-sm">Téléchargez plusieurs images dans une catégorie existante</p>
+                        <h3 class="text-lg font-semibold">Ajouter des images et vidéos au portfolio</h3>
+                        <p class="text-blue-100 text-sm">Téléchargez plusieurs images et vidéos dans une catégorie existante</p>
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -304,7 +358,7 @@ ob_end_flush();
                         
                         <div>
                             <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
-                                Images <span class="text-red-500">*</span>
+                                Images et vidéos <span class="text-red-500">*</span>
                             </label>
                             <div class="flex items-center justify-center w-full">
                                 <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
@@ -313,15 +367,15 @@ ob_end_flush();
                                             <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
                                         </div>
                                         <p class="mb-2 text-sm text-gray-500">
-                                            <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos images
+                                            <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos fichiers
                                         </p>
-                                        <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
+                                        <p class="text-xs text-gray-500">Images (PNG, JPG, JPEG, GIF) ou Vidéos (MP4, AVI, MOV, etc.)</p>
                                     </div>
                                     <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                         </div>
                                     </div>
-                                    <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*" required>
+                                    <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
                                 </label>
                             </div>                    
                             <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
@@ -377,18 +431,40 @@ ob_end_flush();
                             <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 <?php echo count($portfolioImages[$category]); ?> image(s)
                             </span>
+                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <?php echo count($portfolioVideos[$category]); ?> vidéo(s)
+                            </span>
                         </h3>
                         <p class="text-sm text-gray-600 mt-1">
                             <?php 
                             $categorySize = 0;
-                            foreach ($portfolioImages[$category] as $img) {
-                                $categorySize += $img['size'];
+                            foreach ($portfolioMedia[$category] as $media) {
+                                $categorySize += $media['size'];
                             }
-                            echo 'Taille totale: ' . round($categorySize / 1024 / 1024, 2) . ' MB';
+                            echo 'Taille totale: ' . round($categorySize / 1024 / 1024, 2) . ' MB • ' . count($portfolioMedia[$category]) . ' média(s)';
                             ?>
                         </p>
                     </div>
                     <div class="flex items-center space-x-2">
+                        <!-- Filtres de type de média -->
+                        <div class="flex items-center space-x-1 mr-4">
+                            <button type="button" onclick="filterMedia('all', '<?php echo htmlspecialchars($category); ?>')" 
+                                    class="media-filter-btn active inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-th mr-1"></i>
+                                Tout
+                            </button>
+                            <button type="button" onclick="filterMedia('images', '<?php echo htmlspecialchars($category); ?>')" 
+                                    class="media-filter-btn inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-images mr-1"></i>
+                                Photos
+                            </button>
+                            <button type="button" onclick="filterMedia('videos', '<?php echo htmlspecialchars($category); ?>')" 
+                                    class="media-filter-btn inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-video mr-1"></i>
+                                Vidéos
+                            </button>
+                        </div>
+                        
                         <a href="manage_category.php?category=<?php echo urlencode($category); ?>" 
                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                             <i class="fas fa-cog mr-1"></i>
@@ -413,10 +489,11 @@ ob_end_flush();
                 </div>
             </div>
             <div class="p-6">
-                <?php if (!empty($portfolioImages[$category])): ?>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <?php if (!empty($portfolioMedia[$category])): ?>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" data-category="<?php echo htmlspecialchars($category); ?>">
+                        <!-- Images -->
                         <?php foreach ($portfolioImages[$category] as $image): ?>
-                            <div class="group relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div class="media-item media-type-image group relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <div class="aspect-w-1 aspect-h-1 bg-gray-100">
                                     <img src="<?php echo htmlspecialchars($image['url']); ?>" 
                                          alt="Image" 
@@ -439,6 +516,12 @@ ob_end_flush();
                                     </div>
                                 </div>
                                 <div class="p-2">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fas fa-image mr-1"></i>
+                                            Image
+                                        </span>
+                                    </div>
                                     <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($image['name']); ?>">
                                         <?php echo htmlspecialchars(substr($image['name'], 0, 15) . (strlen($image['name']) > 15 ? '...' : '')); ?>
                                     </h6>
@@ -446,18 +529,62 @@ ob_end_flush();
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                        
+                        <!-- Vidéos -->
+                        <?php foreach ($portfolioVideos[$category] as $video): ?>
+                            <div class="media-item media-type-video group relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-16 aspect-h-12 bg-gray-100 relative">
+                                    <video class="w-full h-32 object-cover" preload="metadata" muted>
+                                        <source src="<?php echo $video['url']; ?>" type="video/<?php echo pathinfo($video['url'], PATHINFO_EXTENSION); ?>">
+                                    </video>
+                                    <!-- Overlay de lecture -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer" onclick="openVideoModal('<?php echo $video['url']; ?>')">
+                                        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-play text-white text-sm"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                                        <button onclick="openVideoModal('<?php echo $video['url']; ?>')" 
+                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200"
+                                           title="Lire la vidéo">
+                                            <i class="fas fa-play text-sm"></i>
+                                        </button>
+                                        <a href="?delete=<?php echo urlencode($video['name']); ?>&category=<?php echo urlencode($category); ?>&type=video" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?');" 
+                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                                           title="Supprimer la vidéo">
+                                            <i class="fas fa-trash text-sm"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="p-2">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <i class="fas fa-video mr-1"></i>
+                                            Vidéo
+                                        </span>
+                                    </div>
+                                    <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($video['name']); ?>">
+                                        <?php echo htmlspecialchars(substr($video['name'], 0, 15) . (strlen($video['name']) > 15 ? '...' : '')); ?>
+                                    </h6>
+                                    <p class="text-xs text-gray-500"><?php echo round($video['size'] / 1024 / 1024, 1); ?> MB</p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php else: ?>
                     <div class="text-center py-12">
                         <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-images text-gray-400 text-2xl"></i>
+                            <i class="fas fa-photo-video text-gray-400 text-2xl"></i>
                         </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune image</h3>
-                        <p class="text-gray-600 mb-4">Cette catégorie ne contient pas encore d'images.</p>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun média</h3>
+                        <p class="text-gray-600 mb-4">Cette catégorie ne contient pas encore d'images ou de vidéos.</p>
                         <a href="add_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                             <i class="fas fa-plus mr-2"></i>
-                            Ajouter des images
+                            Ajouter des médias
                         </a>
                     </div>
                 <?php endif; ?>
@@ -565,20 +692,35 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Filtrer les fichiers image uniquement
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        // Filtrer les fichiers médias (images ET vidéos)
+        const mediaFiles = Array.from(files).filter(file => 
+            file.type.startsWith('image/') || file.type.startsWith('video/')
+        );
         
-        console.log('Fichiers image valides:', imageFiles.length); // Debug
+        console.log('Fichiers média valides:', mediaFiles.length); // Debug
         
-        if (imageFiles.length === 0) {
-            alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF)');
+        if (mediaFiles.length === 0) {
+            alert('Veuillez sélectionner uniquement des fichiers image ou vidéo');
             fileInput.value = '';
             showDropContent();
             return;
         }
 
+        // Compter les types de fichiers
+        const imageFiles = mediaFiles.filter(file => file.type.startsWith('image/'));
+        const videoFiles = mediaFiles.filter(file => file.type.startsWith('video/'));
+        
+        let countText = '';
+        if (imageFiles.length > 0 && videoFiles.length > 0) {
+            countText = `${imageFiles.length} image(s) et ${videoFiles.length} vidéo(s) sélectionnée(s)`;
+        } else if (imageFiles.length > 0) {
+            countText = `${imageFiles.length} image(s) sélectionnée(s)`;
+        } else {
+            countText = `${videoFiles.length} vidéo(s) sélectionnée(s)`;
+        }
+
         // Afficher les informations
-        fileCount.textContent = `${imageFiles.length} image(s) sélectionnée(s)`;
+        fileCount.textContent = countText;
         fileInfo.classList.remove('hidden');
 
         // Générer les aperçus
@@ -586,14 +728,35 @@ document.addEventListener('DOMContentLoaded', function() {
         dropContent.classList.add('hidden');
         previewContainer.classList.remove('hidden');
 
-        imageFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
+        mediaFiles.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                // Aperçu pour image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'relative group';
+                    previewDiv.innerHTML = `
+                        <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
+                            <img src="${e.target.result}" class="w-full h-20 object-cover">
+                        </div>
+                        <div class="absolute top-1 right-1">
+                            <button type="button" onclick="removeFile(${index}, event)" 
+                                    class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
+                    `;
+                    previewGrid.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type.startsWith('video/')) {
+                // Aperçu pour vidéo
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'relative group';
                 previewDiv.innerHTML = `
-                    <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
-                        <img src="${e.target.result}" class="w-full h-20 object-cover">
+                    <div class="aspect-w-1 aspect-h-1 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
+                        <i class="fas fa-video text-white text-2xl"></i>
                     </div>
                     <div class="absolute top-1 right-1">
                         <button type="button" onclick="removeFile(${index}, event)" 
@@ -604,8 +767,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
                 `;
                 previewGrid.appendChild(previewDiv);
-            };
-            reader.readAsDataURL(file);
+            }
         });
 
         // Activer le bouton d'upload
@@ -710,6 +872,122 @@ document.addEventListener('DOMContentLoaded', function() {
     showDropContent();
     
     console.log('Drag & drop complètement initialisé'); // Debug
+});
+
+// Fonctions de filtrage des médias (copié de manage_images.php)
+function filterMedia(type, category) {
+    // Trouver le conteneur de cette catégorie
+    const categoryContainer = document.querySelector(`[data-category="${category}"]`);
+    if (!categoryContainer) return;
+    
+    // Réinitialiser les boutons de filtre pour cette catégorie
+    const categorySection = categoryContainer.closest('.bg-white');
+    const filterButtons = categorySection.querySelectorAll('.media-filter-btn');
+    
+    filterButtons.forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-gray-700', 'bg-white');
+    });
+    
+    // Activer le bouton sélectionné
+    const activeBtn = categorySection.querySelector(`button[onclick*="'${type}'"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
+        activeBtn.classList.remove('text-gray-700', 'bg-white');
+    }
+    
+    // Filtrer les éléments
+    const mediaItems = categoryContainer.querySelectorAll('.media-item');
+    
+    mediaItems.forEach(item => {
+        if (type === 'all') {
+            item.style.display = 'block';
+        } else if (type === 'images' && item.classList.contains('media-type-image')) {
+            item.style.display = 'block';
+        } else if (type === 'videos' && item.classList.contains('media-type-video')) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour ouvrir la modal vidéo (copié de manage_images.php)
+function openVideoModal(videoPath) {
+    // Créer la modal si elle n'existe pas
+    let modal = document.getElementById('videoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
+        
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #3b82f6; color: white; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; font-weight: 700;">&times;</button>
+                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
+                    <source src="" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        });
+    }
+    
+    const video = document.getElementById('modalVideo');
+    const source = video.querySelector('source');
+    
+    source.src = videoPath;
+    const extension = videoPath.split('.').pop().toLowerCase();
+    
+    // Déterminer le bon type MIME
+    let mimeType = 'video/mp4';
+    switch(extension) {
+        case 'mp4': mimeType = 'video/mp4'; break;
+        case 'webm': mimeType = 'video/webm'; break;
+        case 'mov': mimeType = 'video/quicktime'; break;
+        case 'avi': mimeType = 'video/x-msvideo'; break;
+        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
+        case 'flv': mimeType = 'video/x-flv'; break;
+        case 'mkv': mimeType = 'video/x-matroska'; break;
+    }
+    source.type = mimeType;
+    
+    video.load();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    video.addEventListener('loadeddata', function() {
+        video.play().catch(e => console.log('Autoplay bloqué:', e));
+    }, { once: true });
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeVideoModal();
+    }
 });
 </script>
 

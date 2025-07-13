@@ -166,22 +166,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['videos'])) {
     exit;
 }
 
-// Récupérer les vidéos du projet et les trier par nom de fichier
-$projectDir = "../videos/projects/" . $project['slug'] . "/";
+// Récupérer les images et vidéos du projet et les trier par nom de fichier (pour assurer l'ordre numérique)
+$projectDir = "../img/projects/" . $project['slug'] . "/";
+$videoDir = "../videos/projects/" . $project['slug'] . "/";
+$images = [];
 $videos = [];
+
 if (is_dir($projectDir)) {
-    $videos = glob($projectDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+    // Forcer la mise à jour du cache
+    clearstatcache();
     
-    // Trier les vidéos par nom de fichier pour maintenir l'ordre numérique
+    // Méthode 1: Essayer avec glob() (méthode actuelle)
+    $images = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+    
+    // Méthode 2: Si glob() ne fonctionne pas, utiliser readdir() comme fallback
+    if (empty($images)) {
+        $handle = opendir($projectDir);
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $tempImages = [];
+        
+        while (false !== ($file = readdir($handle))) {
+            if ($file != '.' && $file != '..') {
+                $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                if (in_array($extension, $imageExtensions)) {
+                    $tempImages[] = $projectDir . $file;
+                }
+            }
+        }
+        closedir($handle);
+        $images = $tempImages;
+    }
+    
+    // Trier les images par nom de fichier pour maintenir l'ordre numérique
+    if (!empty($images)) {
+        usort($images, function($a, $b) {
+            return strnatcmp(basename($a), basename($b));
+        });
+    }
+}
+
+if (is_dir($videoDir)) {
+    // Forcer la mise à jour du cache
+    clearstatcache();
+    
+    // Récupérer les vidéos et les trier par nom de fichier
+    $videos = glob($videoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
     usort($videos, function($a, $b) {
         return strnatcmp(basename($a), basename($b));
     });
 }
-
-// À ce stade, toutes les redirections potentielles ont été traitées
-// On peut donc vider le buffer pour afficher la page
-ob_end_flush();
 ?>
+
 <div class="bg-white border-b border-gray-200 mb-6">
     <div class="px-6 py-6">
         <div class="flex justify-between items-center">
@@ -301,20 +336,34 @@ ob_end_flush();
         </div>
     </div>
 
-    <!-- Affichage des vidéos -->
+    <!-- Affichage des vidéos et images -->
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Vidéos actuelles</h3>
-                    <p class="text-sm text-gray-600 mt-1"><?php echo count($videos); ?> vidéo(s)</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Médias du projet</h3>
+                    <p class="text-sm text-gray-600 mt-1"><?php echo count($images); ?> image(s) • <?php echo count($videos); ?> vidéo(s) • La première image sera utilisée comme image principale</p>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <a href="manage_images.php?project=<?php echo $projectId; ?>"
-                       class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
-                        <i class="fas fa-images mr-2"></i>
-                        Gérer les images
-                    </a>
+                    <!-- Filtres de type de média -->
+                    <div id="media-filters" class="flex items-center space-x-1 mr-4">
+                        <button type="button" onclick="filterMedia('all')" id="filter-all"
+                                class="media-filter-btn active inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-th mr-1"></i>
+                            Tout
+                        </button>
+                        <button type="button" onclick="filterMedia('images')" id="filter-images"
+                                class="media-filter-btn inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-images mr-1"></i>
+                            Photos
+                        </button>
+                        <button type="button" onclick="filterMedia('videos')" id="filter-videos"
+                                class="media-filter-btn inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-video mr-1"></i>
+                            Vidéos
+                        </button>
+                    </div>
+
                     <a href="edit_project.php?id=<?php echo $projectId; ?>"
                        class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                         <i class="fas fa-edit mr-2"></i>
@@ -324,32 +373,83 @@ ob_end_flush();
             </div>
         </div>
         <div class="p-6">
-            <?php if (!empty($videos)): ?>
-                <div id="videoGallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <?php foreach ($videos as $index => $video): ?>
-                        <div class="video-container relative group bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200" data-video="<?php echo basename($video); ?>">
-                            <div class="aspect-w-16 aspect-h-9 bg-gray-100">
-                                <video class="w-full h-48 object-cover" controls preload="metadata">
-                                    <source src="<?php echo $video; ?>" type="video/<?php echo pathinfo($video, PATHINFO_EXTENSION); ?>">
-                                    Votre navigateur ne supporte pas la lecture de vidéos.
-                                </video>
-                            </div>
-                            <div class="p-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="text-sm font-medium text-gray-900"><?php echo basename($video); ?></h4>
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            <?php echo round(filesize($video) / 1024 / 1024, 1); ?> MB
-                                        </p>
+            <?php if (!empty($images) || !empty($videos)): ?>
+                <!-- Conteneur principal pour tous les médias -->
+                <div id="mediaGallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Images -->
+                    <?php foreach ($images as $index => $image): ?>
+                        <div class="media-item image-container relative group media-type-image" data-image="<?php echo basename($image); ?>" data-type="image">
+                            <div class="media-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-16 aspect-h-12 bg-gray-100">
+                                    <img src="<?php echo $image; ?>" 
+                                         alt="Image" 
+                                         class="w-full h-48 object-cover">
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900"><?php echo basename($image); ?></h4>
+                                            <?php if ($index === 0): ?>
+                                                <span class="main-image-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                                                    <i class="fas fa-star mr-1"></i>
+                                                    Image principale
+                                                </span>
+                                            <?php endif; ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                                <i class="fas fa-image mr-1"></i>
+                                                Image
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="media-actions mt-3">
+                                        <a href="delete_image.php?project=<?php echo $projectId; ?>&image=<?php echo urlencode(basename($image)); ?>" 
+                                           class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Supprimer
+                                        </a>
                                     </div>
                                 </div>
-                                <div class="video-actions mt-3">
-                                    <a href="delete_video.php?project=<?php echo $projectId; ?>&video=<?php echo urlencode(basename($video)); ?>" 
-                                       class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
-                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?');">
-                                        <i class="fas fa-trash mr-1"></i>
-                                        Supprimer
-                                    </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <!-- Vidéos -->
+                    <?php foreach ($videos as $index => $video): ?>
+                        <div class="media-item video-container relative group media-type-video" data-video="<?php echo basename($video); ?>" data-type="video">
+                            <div class="media-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div class="aspect-w-16 aspect-h-12 bg-gray-100 relative">
+                                    <video class="w-full h-48 object-cover" preload="metadata" muted>
+                                        <source src="<?php echo $video; ?>" type="video/<?php echo pathinfo($video, PATHINFO_EXTENSION); ?>">
+                                    </video>
+                                    <!-- Overlay de lecture -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer" onclick="openVideoModal('<?php echo $video; ?>')">
+                                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-play text-white text-lg"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900"><?php echo basename($video); ?></h4>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                                                <i class="fas fa-video mr-1"></i>
+                                                Vidéo
+                                            </span>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                <?php echo round(filesize($video) / 1024 / 1024, 1); ?> MB
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="media-actions mt-3">
+                                        <a href="delete_video.php?project=<?php echo $projectId; ?>&video=<?php echo urlencode(basename($video)); ?>" 
+                                           class="delete-btn inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?');">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Supprimer
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -358,10 +458,10 @@ ob_end_flush();
             <?php else: ?>
                 <div class="text-center py-12">
                     <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-video text-gray-400 text-2xl"></i>
+                        <i class="fas fa-photo-video text-gray-400 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune vidéo</h3>
-                    <p class="text-gray-600 mb-6">Ce projet n'a pas encore de vidéos. Utilisez le formulaire ci-dessus pour ajouter vos premières vidéos.</p>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun média</h3>
+                    <p class="text-gray-600 mb-6">Ce projet n'a pas encore d'images ou de vidéos. Utilisez le formulaire ci-dessus pour ajouter vos premiers médias.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -598,6 +698,115 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     showDropContent();
+});
+
+// Fonctions de filtrage des médias (copié de manage_images.php)
+function filterMedia(type) {
+    // Réinitialiser les boutons de filtre
+    document.querySelectorAll('.media-filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-gray-700', 'bg-white');
+    });
+    
+    // Activer le bouton sélectionné
+    const activeBtn = document.getElementById(`filter-${type}`);
+    activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
+    activeBtn.classList.remove('text-gray-700', 'bg-white');
+    
+    // Filtrer les éléments
+    const mediaItems = document.querySelectorAll('.media-item');
+    
+    mediaItems.forEach(item => {
+        const itemType = item.getAttribute('data-type');
+        
+        if (type === 'all') {
+            item.style.display = 'block';
+        } else if (type === 'images' && itemType === 'image') {
+            item.style.display = 'block';
+        } else if (type === 'videos' && itemType === 'video') {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour ouvrir la modal vidéo (copié de manage_images.php)
+function openVideoModal(videoPath) {
+    // Créer la modal si elle n'existe pas
+    let modal = document.getElementById('videoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
+        
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #baff00; color: #222; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; font-weight: 700;">&times;</button>
+                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
+                    <source src="" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        });
+    }
+    
+    const video = document.getElementById('modalVideo');
+    const source = video.querySelector('source');
+    
+    source.src = videoPath;
+    const extension = videoPath.split('.').pop().toLowerCase();
+    
+    // Déterminer le bon type MIME
+    let mimeType = 'video/mp4';
+    switch(extension) {
+        case 'mp4': mimeType = 'video/mp4'; break;
+        case 'webm': mimeType = 'video/webm'; break;
+        case 'mov': mimeType = 'video/quicktime'; break;
+        case 'avi': mimeType = 'video/x-msvideo'; break;
+        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
+        case 'flv': mimeType = 'video/x-flv'; break;
+        case 'mkv': mimeType = 'video/x-matroska'; break;
+    }
+    source.type = mimeType;
+    
+    video.load();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    video.addEventListener('loadeddata', function() {
+        video.play().catch(e => console.log('Autoplay bloqué:', e));
+    }, { once: true });
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeVideoModal();
+    }
 });
 </script>
 

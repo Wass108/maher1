@@ -1,4 +1,3 @@
-
 <?php
 // Inclure les fichiers nécessaires
 include "../connect/connect.php";
@@ -26,6 +25,7 @@ function getExistingCategories($portfolioMainDir) {
 }
 
 $portfolioMainDir = "../img/portfolio/";
+$portfolioVideoDir = "../videos/portfolio/";
 
 // Récupérer dynamiquement toutes les catégories existantes
 $categories = getExistingCategories($portfolioMainDir);
@@ -38,6 +38,7 @@ if (!isset($_GET['category']) || !in_array($_GET['category'], $categories)) {
 
 $category = $_GET['category'];
 $categoryDir = $portfolioMainDir . $category . "/";
+$categoryVideoDir = $portfolioVideoDir . $category . "/";
 
 // Messages de feedback
 $message = '';
@@ -70,8 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_category'])) {
     exit;
 }
 
-// Récupérer les images de cette catégorie
+// Récupérer les images et vidéos de cette catégorie
 $categoryImages = [];
+$categoryVideos = [];
+
 if (is_dir($categoryDir)) {
     $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
     foreach ($images as $image) {
@@ -80,19 +83,39 @@ if (is_dir($categoryDir)) {
             'name' => basename($image),
             'size' => filesize($image),
             'url' => $image,
+            'type' => 'image',
             'modified' => filemtime($image)
         ];
     }
-    
-    // Trier par date de modification (plus récent en premier)
-    usort($categoryImages, function($a, $b) {
-        return $b['modified'] - $a['modified'];
-    });
 }
+
+if (is_dir($categoryVideoDir)) {
+    $videos = glob($categoryVideoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+    foreach ($videos as $video) {
+        $categoryVideos[] = [
+            'path' => $video,
+            'name' => basename($video),
+            'size' => filesize($video),
+            'url' => $video,
+            'type' => 'video',
+            'modified' => filemtime($video)
+        ];
+    }
+}
+
+// Combiner images et vidéos
+$categoryMedia = array_merge($categoryImages, $categoryVideos);
+
+// Trier par date de modification (plus récent en premier)
+usort($categoryMedia, function($a, $b) {
+    return $b['modified'] - $a['modified'];
+});
 
 // Calculer les statistiques
 $totalImages = count($categoryImages);
-$totalSize = array_sum(array_column($categoryImages, 'size'));
+$totalVideos = count($categoryVideos);
+$totalMedia = count($categoryMedia);
+$totalSize = array_sum(array_column($categoryMedia, 'size'));
 
 ob_end_flush();
 ?>
@@ -228,13 +251,38 @@ ob_end_flush();
             <div class="flex justify-between items-center">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <i class="fas fa-images mr-3"></i>
-                        Images de "<?php echo htmlspecialchars($category); ?>"
+                        <i class="fas fa-photo-video mr-3"></i>
+                        Médias de "<?php echo htmlspecialchars($category); ?>"
+                        <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <?php echo $totalImages; ?> image(s)
+                        </span>
+                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <?php echo $totalVideos; ?> vidéo(s)
+                        </span>
                     </h3>
-                    <p class="text-sm text-gray-600 mt-1">Triées par date de modification (plus récentes en premier)</p>
+                    <p class="text-sm text-gray-600 mt-1">Triés par date de modification • <?php echo $totalMedia; ?> média(s) au total</p>
                 </div>
-                <?php if ($totalImages > 0): ?>
-                    <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2">
+                    <!-- Filtres de type de média -->
+                    <div class="flex items-center space-x-1 mr-4">
+                        <button type="button" onclick="filterMedia('all')" id="filter-all"
+                                class="media-filter-btn active inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-th mr-1"></i>
+                            Tout
+                        </button>
+                        <button type="button" onclick="filterMedia('images')" id="filter-images"
+                                class="media-filter-btn inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-images mr-1"></i>
+                            Photos
+                        </button>
+                        <button type="button" onclick="filterMedia('videos')" id="filter-videos"
+                                class="media-filter-btn inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-video mr-1"></i>
+                            Vidéos
+                        </button>
+                    </div>
+
+                    <?php if ($totalMedia > 0): ?>
                         <div id="bulk-actions" class="hidden space-x-2">
                             <button type="button" onclick="deleteSelectedImages()" disabled
                                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
@@ -254,24 +302,24 @@ ob_end_flush();
                                 Sélection multiple
                             </button>
                             <a href="empty_portfolio_category.php?category=<?php echo urlencode($category); ?>&redirect=manage_category" 
-                               onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Toutes les images seront supprimées mais la catégorie restera.');"
+                               onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Tous les médias seront supprimés mais la catégorie restera.');"
                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200">
                                 <i class="fas fa-broom mr-2"></i>
                                 Vider
                             </a>
                             <a href="delete_portfolio_category.php?category=<?php echo urlencode($category); ?>" 
-                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer complètement cette catégorie ? Le dossier et toutes les images seront supprimés.');"
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer complètement cette catégorie ? Le dossier et tous les médias seront supprimés.');"
                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">
                                 <i class="fas fa-trash mr-2"></i>
                                 Supprimer catégorie
                             </a>
                         </div>
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <div class="p-6">
-            <?php if (!empty($categoryImages)): ?>
+            <?php if (!empty($categoryMedia)): ?>
                 <div id="ajax-messages" class="mb-6"></div>
                 <div id="selection-controls" class="hidden mb-6">
                     <div class="flex items-center space-x-3">
@@ -293,28 +341,51 @@ ob_end_flush();
                     </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <?php foreach ($categoryImages as $image): ?>
-                        <div class="image-container relative group" data-image="<?php echo htmlspecialchars($image['name']); ?>">
+                    <?php foreach ($categoryMedia as $media): ?>
+                        <div class="image-container relative group" data-image="<?php echo htmlspecialchars($media['name']); ?>">
                             <div class="image-checkbox absolute top-3 right-3 z-10 hidden">
                                 <input type="checkbox" class="image-select h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                       value="<?php echo htmlspecialchars($image['name']); ?>" onchange="updateSelectionCount()">
+                                       value="<?php echo htmlspecialchars($media['name']); ?>" onchange="updateSelectionCount()">
                             </div>
                             <div class="image-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                                 <div class="aspect-w-1 aspect-h-1 bg-gray-100">
-                                    <img src="<?php echo $image['url']; ?>" 
-                                         alt="Image" 
-                                         class="w-full h-32 object-cover">
+                                    <?php if ($media['type'] === 'image'): ?>
+                                        <img src="<?php echo $media['url']; ?>" 
+                                             alt="Image" 
+                                             class="w-full h-32 object-cover">
+                                    <?php else: ?>
+                                        <div class="relative">
+                                            <video class="w-full h-32 object-cover" muted preload="metadata">
+                                                <source src="<?php echo $media['url']; ?>" type="video/<?php echo pathinfo($media['url'], PATHINFO_EXTENSION); ?>">
+                                                Votre navigateur ne prend pas en charge la lecture de vidéos.
+                                            </video>
+                                            <!-- Overlay de lecture pour la modal -->
+                                            <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer" onclick="openVideoModal('<?php echo $media['url']; ?>')">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-play text-white text-sm"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                                     <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2 image-actions">
-                                        <a href="<?php echo $image['url']; ?>" 
-                                           target="_blank" 
-                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
-                                           title="Voir en grand">
-                                            <i class="fas fa-eye text-sm"></i>
-                                        </a>
-                                        <a href="delete_portfolio_image.php?category=<?php echo urlencode($category); ?>&image=<?php echo urlencode($image['name']); ?>&redirect=manage_category" 
-                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette image?');" 
+                                        <?php if ($media['type'] === 'image'): ?>
+                                            <a href="<?php echo $media['url']; ?>" 
+                                               target="_blank" 
+                                               class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                                               title="Voir en grand">
+                                                <i class="fas fa-eye text-sm"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <button onclick="openVideoModal('<?php echo $media['url']; ?>')" 
+                                                   class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200"
+                                                   title="Lire la vidéo">
+                                                <i class="fas fa-play text-sm"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <a href="delete_portfolio_image.php?category=<?php echo urlencode($category); ?>&image=<?php echo urlencode($media['name']); ?>&redirect=manage_category" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce média?');" 
                                            class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
                                            title="Supprimer">
                                             <i class="fas fa-trash text-sm"></i>
@@ -322,12 +393,12 @@ ob_end_flush();
                                     </div>
                                 </div>
                                 <div class="p-3">
-                                    <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($image['name']); ?>">
-                                        <?php echo htmlspecialchars($image['name']); ?>
+                                    <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($media['name']); ?>">
+                                        <?php echo htmlspecialchars($media['name']); ?>
                                     </h6>
                                     <div class="text-xs text-gray-500 mt-1">
-                                        <p><?php echo round($image['size'] / 1024, 1); ?> KB</p>
-                                        <p><?php echo date('d/m/Y H:i', $image['modified']); ?></p>
+                                        <p><?php echo round($media['size'] / 1024, 1); ?> KB</p>
+                                        <p><?php echo date('d/m/Y H:i', $media['modified']); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -540,6 +611,112 @@ $(document).on('click', '.image-card.selection-mode', function(e) {
 // Initialiser les événements quand la page est chargée
 $(document).ready(function() {
     updateSelectionCount();
+});
+
+// Fonctions de filtrage des médias (comme dans manage_images.php)
+function filterMedia(type) {
+    // Réinitialiser les boutons de filtre
+    document.querySelectorAll('.media-filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-gray-700', 'bg-white');
+    });
+    
+    // Activer le bouton sélectionné
+    const activeBtn = document.getElementById(`filter-${type}`);
+    activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
+    activeBtn.classList.remove('text-gray-700', 'bg-white');
+    
+    // Filtrer les éléments
+    const mediaItems = document.querySelectorAll('.image-container');
+    
+    mediaItems.forEach(item => {
+        const isVideo = item.querySelector('video') !== null;
+        const isImage = item.querySelector('img') !== null;
+        
+        if (type === 'all') {
+            item.style.display = 'block';
+        } else if (type === 'images' && isImage) {
+            item.style.display = 'block';
+        } else if (type === 'videos' && isVideo) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour ouvrir la modal vidéo
+function openVideoModal(videoPath) {
+    let modal = document.getElementById('videoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
+        
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #3b82f6; color: white; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; font-weight: 700;">&times;</button>
+                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
+                    <source src="" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        });
+    }
+    
+    const video = document.getElementById('modalVideo');
+    const source = video.querySelector('source');
+    
+    source.src = videoPath;
+    const extension = videoPath.split('.').pop().toLowerCase();
+    
+    let mimeType = 'video/mp4';
+    switch(extension) {
+        case 'mp4': mimeType = 'video/mp4'; break;
+        case 'webm': mimeType = 'video/webm'; break;
+        case 'mov': mimeType = 'video/quicktime'; break;
+        case 'avi': mimeType = 'video/x-msvideo'; break;
+        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
+        case 'flv': mimeType = 'video/x-flv'; break;
+        case 'mkv': mimeType = 'video/x-matroska'; break;
+    }
+    source.type = mimeType;
+    
+    video.load();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    video.addEventListener('loadeddata', function() {
+        video.play().catch(e => console.log('Autoplay bloqué:', e));
+    }, { once: true });
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeVideoModal();
+    }
 });
 </script>
 

@@ -22,6 +22,7 @@ function getExistingCategories($portfolioMainDir) {
 }
 
 $portfolioMainDir = "../img/portfolio/";
+$portfolioVideoDir = "../videos/portfolio/";
 
 // Récupérer la catégorie depuis l'URL ou la redirection
 $selectedCategory = $_GET['category'] ?? '';
@@ -35,20 +36,25 @@ if (empty($selectedCategory) || !in_array($selectedCategory, $categories)) {
 }
 
 $category = $_GET['category'];
-$categoryDir = $portfolioMainDir . $category . "/";
+$imageCategoryDir = $portfolioMainDir . $category . "/";
+$videoCategoryDir = $portfolioVideoDir . $category . "/";
 
 // Messages de feedback
 $message = '';
 $error = '';
 
-// Traitement du téléchargement d'images
+// Traitement du téléchargement d'images et vidéos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
-    // Créer le dossier s'il n'existe pas
-    if (!is_dir($categoryDir)) {
-        mkdir($categoryDir, 0777, true);
+    // Créer les dossiers s'ils n'existent pas
+    if (!is_dir($imageCategoryDir)) {
+        mkdir($imageCategoryDir, 0777, true);
+    }
+    if (!is_dir($videoCategoryDir)) {
+        mkdir($videoCategoryDir, 0777, true);
     }
     
-    $uploadCount = 0;
+    $imageUploadCount = 0;
+    $videoUploadCount = 0;
     $errorCount = 0;
     
     // Traiter chaque fichier
@@ -57,16 +63,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
             $fileName = $_FILES['images']['name'][$key];
             $fileType = $_FILES['images']['type'][$key];
             
-            // Vérifier si c'est une image
-            if (strpos($fileType, 'image/') === 0) {
-                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                
-                // Générer un nom unique basé sur le timestamp
+            // Détecter le type de fichier par extension aussi (pour plus de fiabilité)
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
+            
+            $isImage = (strpos($fileType, 'image/') === 0) || in_array($extension, $imageExtensions);
+            $isVideo = (strpos($fileType, 'video/') === 0) || in_array($extension, $videoExtensions);
+            
+            if ($isImage) {
+                // Générer un nom unique basé sur le timestamp pour les images
                 $newFileName = time() . '_' . $key . '.' . $extension;
-                $destination = $categoryDir . $newFileName;
+                $destination = $imageCategoryDir . $newFileName;
                 
                 if (move_uploaded_file($tmp_name, $destination)) {
-                    $uploadCount++;
+                    $imageUploadCount++;
+                } else {
+                    $errorCount++;
+                }
+            } elseif ($isVideo) {
+                // Générer un nom unique basé sur le timestamp pour les vidéos
+                $newFileName = time() . '_' . $key . '.' . $extension;
+                $destination = $videoCategoryDir . $newFileName;
+                
+                if (move_uploaded_file($tmp_name, $destination)) {
+                    $videoUploadCount++;
                 } else {
                     $errorCount++;
                 }
@@ -77,11 +98,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
     }
     
     // Messages de feedback stockés en session
-    if ($uploadCount > 0) {
-        $_SESSION['message'] = "$uploadCount image(s) téléchargée(s) avec succès dans la catégorie $category.";
+    $messages = [];
+    if ($imageUploadCount > 0) {
+        $messages[] = "$imageUploadCount image(s) téléchargée(s)";
+    }
+    if ($videoUploadCount > 0) {
+        $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
+    }
+    
+    if (!empty($messages)) {
+        $_SESSION['message'] = implode(' et ', $messages) . " avec succès dans la catégorie $category.";
     }
     if ($errorCount > 0) {
-        $_SESSION['error'] = "$errorCount image(s) n'ont pas pu être téléchargées.";
+        $_SESSION['error'] = "$errorCount fichier(s) n'ont pas pu être téléchargés.";
     }
     
     // Déterminer la page de redirection basée sur le referer ou un paramètre
@@ -110,8 +139,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
 
 // Récupérer les images existantes de cette catégorie
 $existingImages = [];
-if (is_dir($categoryDir)) {
-    $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+if (is_dir($imageCategoryDir)) {
+    $images = glob($imageCategoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
     foreach ($images as $image) {
         $existingImages[] = [
             'path' => $image,
@@ -122,13 +151,26 @@ if (is_dir($categoryDir)) {
     }
 }
 
+$existingVideos = [];
+if (is_dir($videoCategoryDir)) {
+    $videos = glob($videoCategoryDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+    foreach ($videos as $video) {
+        $existingVideos[] = [
+            'path' => $video,
+            'name' => basename($video),
+            'size' => filesize($video),
+            'url' => $video
+        ];
+    }
+}
+
 ob_end_flush();
 ?>
 <div class="bg-white border-b border-gray-200 mb-6">
     <div class="px-6 py-6">
         <div class="flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Ajouter des images</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Ajouter des images/vidéos</h1>
                 <p class="text-gray-600 mt-1">Catégorie : <span class="font-medium"><?php echo htmlspecialchars($category); ?></span></p>
             </div>
             <nav class="flex space-x-2 text-sm">
@@ -192,7 +234,18 @@ ob_end_flush();
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                    <i class="fas fa-hdd text-purple-600 text-xl"></i>
+                    <i class="fas fa-video text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Vidéos existantes</p>
+                    <p class="text-2xl font-bold text-gray-900"><?php echo count($existingVideos); ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-hdd text-red-600 text-xl"></i>
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-600">Espace utilisé</p>
@@ -208,8 +261,8 @@ ob_end_flush();
                     <i class="fas fa-upload text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold">Télécharger des images</h3>
-                    <p class="text-blue-100 text-sm">Ajoutez des images à la catégorie "<?php echo htmlspecialchars($category); ?>"</p>
+                    <h3 class="text-lg font-semibold">Télécharger des images/vidéos</h3>
+                    <p class="text-blue-100 text-sm">Ajoutez des images ou vidéos à la catégorie "<?php echo htmlspecialchars($category); ?>"</p>
                 </div>
             </div>
         </div>
@@ -217,7 +270,7 @@ ob_end_flush();
             <form method="post" enctype="multipart/form-data" id="upload-form" class="space-y-6">
                 <div>
                     <label for="images" class="block text-sm font-medium text-gray-700 mb-3">
-                        Images à télécharger <span class="text-red-500">*</span>
+                        Fichiers à télécharger <span class="text-red-500">*</span>
                     </label>
                     <div class="flex items-center justify-center w-full">
                         <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
@@ -226,15 +279,15 @@ ob_end_flush();
                                     <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
                                 </div>
                                 <p class="mb-2 text-sm text-gray-500">
-                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos images
+                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos fichiers
                                 </p>
-                                <p class="text-xs text-gray-500">PNG, JPG, JPEG ou GIF (plusieurs fichiers acceptés)</p>
+                                <p class="text-xs text-gray-500">PNG, JPG, JPEG, GIF, MP4, AVI, MOV, WMV, FLV (plusieurs fichiers acceptés)</p>
                             </div>
                             <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                 </div>
                             </div>
-                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*" required>
+                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
                         </label>
                     </div>                    
                     <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
@@ -257,7 +310,7 @@ ob_end_flush();
                     <button type="submit" id="upload-btn" 
                             class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
                         <i class="fas fa-upload mr-2"></i>
-                        Télécharger les images
+                        Télécharger les fichiers
                     </button>                    
                     <a href="manage_category.php?category=<?php echo urlencode($category); ?>" 
                        class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
@@ -329,6 +382,70 @@ ob_end_flush();
             <?php endif; ?>
         </div>
     </div>
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-video mr-3"></i>
+                        Vidéos existantes
+                        <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <?php echo count($existingVideos); ?> vidéo(s)
+                        </span>
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">Vidéos déjà présentes dans cette catégorie</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <?php if (!empty($existingVideos)): ?>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <?php foreach ($existingVideos as $video): ?>
+                        <div class="group relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <div class="relative">
+                                    <video class="w-full h-24 object-cover" muted preload="metadata">
+                                        <source src="<?php echo $video['url']; ?>" type="video/<?php echo pathinfo($video['url'], PATHINFO_EXTENSION); ?>">
+                                        Votre navigateur ne prend pas en charge la lecture de vidéos.
+                                    </video>
+                                    <!-- Overlay de lecture pour la modal -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer" onclick="openVideoModal('<?php echo $video['url']; ?>')">
+                                        <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-play text-white text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <button onclick="openVideoModal('<?php echo $video['url']; ?>')" 
+                                           class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200"
+                                           title="Lire la vidéo">
+                                        <i class="fas fa-play text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <h6 class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($video['name']); ?>">
+                                    <?php echo htmlspecialchars(substr($video['name'], 0, 12) . (strlen($video['name']) > 12 ? '...' : '')); ?>
+                                </h6>
+                                <p class="text-xs text-gray-500"><?php echo round($video['size'] / 1024, 1); ?> KB</p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-video-slash text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune vidéo pour le moment</h3>
+                    <p class="text-gray-600 mb-4">Cette catégorie ne contient pas encore de vidéos.</p>
+                    <p class="text-gray-600">Utilisez le formulaire ci-dessus pour ajouter vos premières vidéos.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
@@ -395,18 +512,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Filtrer les fichiers image uniquement
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        // Filtrer les fichiers image et vidéo uniquement
+        const mediaFiles = Array.from(files).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'));
         
-        if (imageFiles.length === 0) {
-            alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF)');
+        if (mediaFiles.length === 0) {
+            alert('Veuillez sélectionner uniquement des fichiers image (PNG, JPG, JPEG, GIF) ou vidéo (MP4, AVI, MOV, WMV, FLV)');
             fileInput.value = '';
             showDropContent();
             return;
         }
 
         // Afficher les informations
-        fileCount.textContent = `${imageFiles.length} image(s) sélectionnée(s)`;
+        fileCount.textContent = `${mediaFiles.length} fichier(s) sélectionné(s)`;
         fileInfo.classList.remove('hidden');
 
         // Générer les aperçus
@@ -414,23 +531,46 @@ document.addEventListener('DOMContentLoaded', function() {
         dropContent.classList.add('hidden');
         previewContainer.classList.remove('hidden');
 
-        imageFiles.forEach((file, index) => {
+        mediaFiles.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'relative group';
-                previewDiv.innerHTML = `
-                    <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
-                        <img src="${e.target.result}" class="w-full h-20 object-cover">
-                    </div>
-                    <div class="absolute top-1 right-1">
-                        <button type="button" onclick="removeFile(${index}, event)" 
-                                class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
-                `;
+                
+                // Déterminer le type de média pour l'aperçu
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                
+                if (isImage) {
+                    previewDiv.innerHTML = `
+                        <div class="aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden">
+                            <img src="${e.target.result}" class="w-full h-20 object-cover">
+                        </div>
+                        <div class="absolute top-1 right-1">
+                            <button type="button" onclick="removeFile(${index}, event)" 
+                                    class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
+                    `;
+                } else if (isVideo) {
+                    previewDiv.innerHTML = `
+                        <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
+                            <video src="${e.target.result}" class="w-full h-20 object-cover" preload="metadata">
+                                Votre navigateur ne prend pas en charge la lecture de vidéos.
+                            </video>
+                        </div>
+                        <div class="absolute top-1 right-1">
+                            <button type="button" onclick="removeFile(${index}, event)" 
+                                    class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-1 truncate" title="${file.name}">${file.name}</p>
+                    `;
+                }
+                
                 previewGrid.appendChild(previewDiv);
             };
             reader.readAsDataURL(file);
@@ -473,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         if (fileInput.files.length === 0) {
-            alert('Veuillez sélectionner au moins une image');
+            alert('Veuillez sélectionner au moins un fichier');
             return;
         }
 
@@ -518,13 +658,90 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetUploadState() {
         uploadProgress.classList.add('hidden');
         uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Télécharger les images';
+        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Télécharger les fichiers';
         progressBar.style.width = '0%';
         progressPercent.textContent = '0%';
     }
 
     // Initialiser l'état
     showDropContent();
+});
+
+// Fonction pour ouvrir la modal vidéo (identique à manage_images.php)
+function openVideoModal(videoPath) {
+    let modal = document.getElementById('videoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
+        
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #baff00; color: #222; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; font-weight: 700;">&times;</button>
+                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
+                    <source src="" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        });
+    }
+    
+    const video = document.getElementById('modalVideo');
+    const source = video.querySelector('source');
+    
+    source.src = videoPath;
+    const extension = videoPath.split('.').pop().toLowerCase();
+    
+    // Déterminer le bon type MIME
+    let mimeType = 'video/mp4';
+    switch(extension) {
+        case 'mp4': mimeType = 'video/mp4'; break;
+        case 'webm': mimeType = 'video/webm'; break;
+        case 'mov': mimeType = 'video/quicktime'; break;
+        case 'avi': mimeType = 'video/x-msvideo'; break;
+        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
+        case 'flv': mimeType = 'video/x-flv'; break;
+        case 'mkv': mimeType = 'video/x-matroska'; break;
+    }
+    source.type = mimeType;
+    
+    video.load();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    video.addEventListener('loadeddata', function() {
+        video.play().catch(e => console.log('Autoplay bloqué:', e));
+    }, { once: true });
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeVideoModal();
+    }
 });
 </script>
 

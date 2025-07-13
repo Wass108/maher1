@@ -316,6 +316,11 @@ if (isset($_POST['reorganize_images']) && !empty($images)) {
 
 // Traitement de la réorganisation des images par AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST['reorder'] === 'true') {
+    // IMPORTANT: Stopper complètement le buffer de sortie pour les requêtes AJAX
+    if (ob_get_level()) {
+        ob_end_clean(); // Nettoyer le buffer au lieu de le vider
+    }
+    
     if (isset($_POST['imageOrder']) && is_array($_POST['imageOrder'])) {
         $projectDir = "../img/projects/" . $project['slug'] . "/";
         $tempDir = $projectDir . "temp_reorder/";
@@ -394,9 +399,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 rmdir($tempDir);
             }
             
-            // Réponse AJAX de succès
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'Images réorganisées avec succès']);
+            // Réponse AJAX de succès - AVEC NETTOYAGE COMPLET
+            ob_clean(); // S'assurer qu'aucun contenu n'a été envoyé
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-cache, must-revalidate');
+            echo json_encode(['success' => true, 'message' => 'Images réorganisées avec succès'], JSON_UNESCAPED_UNICODE);
             exit;
             
         } catch (Exception $e) {
@@ -411,14 +418,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 rmdir($tempDir);
             }
             
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            ob_clean(); // Nettoyer avant d'envoyer la réponse d'erreur
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-cache, must-revalidate');
+            echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
             exit;
         }
     }
     
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Paramètres invalides']);
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, must-revalidate');
+    echo json_encode(['success' => false, 'message' => 'Paramètres invalides'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -526,32 +537,34 @@ ob_end_flush();
         </div>
         <div class="p-6">
             <form method="post" enctype="multipart/form-data" id="upload-form" class="space-y-6">
-                <div>
-                    <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
-                        Sélectionner des images et vidéos <span class="text-red-500">*</span>
-                    </label>
-                    <div class="flex items-center justify-center w-full">
-                        <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-                            <div id="drop-content" class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
-                                </div>
-                                <p class="mb-2 text-sm text-gray-500">
-                                    <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos fichiers
-                                </p>
-                                <p class="text-xs text-gray-500">Images (PNG, JPG, JPEG, GIF) ou Vidéos (MP4, AVI, MOV, etc.)</p>
-                            </div>
-                            <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
-                                </div>
-                            </div>
-                            <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
+                <div class="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                    <div>
+                        <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
+                            Images et vidéos <span class="text-red-500">*</span>
                         </label>
-                    </div>
-                    <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                            <span id="file-count" class="text-sm text-blue-700 font-medium"></span>
+                        <div class="flex items-center justify-center w-full">
+                            <label for="images" id="drop-zone" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                <div id="drop-content" class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                                        <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
+                                    </div>
+                                    <p class="mb-2 text-sm text-gray-500">
+                                        <span class="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez vos fichiers
+                                    </p>
+                                    <p class="text-xs text-gray-500">Images (PNG, JPG, JPEG, GIF) ou Vidéos (MP4, AVI, MOV, etc.)</p>
+                                </div>
+                                <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
+                                    </div>
+                                </div>
+                                <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
+                            </label>
+                        </div>                    
+                        <div id="file-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <span id="file-count" class="text-sm text-blue-700 font-medium"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -632,14 +645,14 @@ ob_end_flush();
                             <i class="fas fa-times mr-2"></i>
                             Annuler
                         </button>
-                        <button id="enableReorder" <?php echo empty($images) ? 'disabled' : ''; ?>
+                        <button id="enableReorder" <?php echo empty($images) && empty($videos) ? 'disabled' : ''; ?>
                                 class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
                             <i class="fas fa-arrows-alt mr-2"></i>
                             Réorganiser
                         </button>
                         <form method="post" class="inline">
                             <input type="hidden" name="reorganize_images" value="1">
-                            <button type="submit" <?php echo empty($images) ? 'disabled' : ''; ?>
+                            <button type="submit" <?php echo empty($images) && empty($videos) ? 'disabled' : ''; ?>
                                     class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
                                 <i class="fas fa-sort-numeric-down mr-2"></i>
                                 Renuméroter
@@ -684,7 +697,7 @@ ob_end_flush();
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-blue-700">
-                                <strong>Mode de réorganisation:</strong> Glissez et déposez les images pour modifier leur ordre. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.
+                                <strong>Mode de réorganisation:</strong> Seules les images peuvent être réorganisées. Glissez et déposez les images pour modifier leur ordre. Les vidéos restent en place. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.
                             </p>
                         </div>
                     </div>
@@ -745,6 +758,10 @@ ob_end_flush();
                                 <input type="checkbox" class="media-select h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded" 
                                        value="<?php echo htmlspecialchars(basename($video)); ?>" data-type="video" onchange="updateSelectionCount()">
                             </div>
+                            <div class="drag-handle hidden cursor-move bg-purple-50 border border-purple-200 text-center py-2 rounded-t-lg">
+                                <i class="fas fa-grip-vertical text-purple-600"></i>
+                                <span class="text-xs text-purple-700 ml-2">Déplacer</span>
+                            </div>
                             <div class="media-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <div class="aspect-w-16 aspect-h-12 bg-gray-100 relative">
                                     <video class="w-full h-48 object-cover" preload="metadata" muted>
@@ -803,6 +820,7 @@ ob_end_flush();
 // Variables globales pour éviter les conflits
 let selectionMode = false;
 let reorderMode = false;
+let sortableInstance = null;
 
 function toggleSelectionMode() {
     // Vérifier qu'on n'est pas en mode réorganisation
@@ -1251,6 +1269,271 @@ document.addEventListener('keydown', function(e) {
 
 // Initialiser l'état général
 updateSelectionCount();
+
+// ===== SYSTÈME DE RÉORGANISATION PAR DRAG & DROP =====
+// Attendre que le DOM soit complètement chargé
+document.addEventListener('DOMContentLoaded', function() {
+    // Activer le mode de réorganisation
+    const enableReorderBtn = document.getElementById('enableReorder');
+    if (enableReorderBtn) {
+        enableReorderBtn.addEventListener('click', function() {
+            console.log('Bouton Réorganiser cliqué'); // Debug
+            
+            if (selectionMode) {
+                alert('Veuillez d\'abord quitter le mode de sélection multiple avant d\'activer la réorganisation');
+                return;
+            }
+            
+            reorderMode = true;
+            
+            // Afficher/masquer les éléments appropriés
+            $('#enableReorder').addClass('hidden');
+            $('#saveOrder').removeClass('hidden');
+            $('#cancelReorder').removeClass('hidden');
+            $('#reorderInstructions').removeClass('hidden');
+            $('.media-checkbox').addClass('hidden');
+            $('.drag-handle').removeClass('hidden');
+            $('#media-filters').addClass('hidden');
+            
+            // Désactiver les autres boutons
+            $('button[onclick="toggleSelectionMode()"]').prop('disabled', true);
+            
+            // Initialiser Sortable.js sur le conteneur des médias - IMAGES SEULEMENT
+            const mediaGallery = document.getElementById('mediaGallery');
+            if (mediaGallery) {
+                sortableInstance = Sortable.create(mediaGallery, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    // Exclure les vidéos du drag & drop
+                    filter: '.media-type-video',
+                    preventOnFilter: false,
+                    onStart: function(evt) {
+                        // Vérifier que c'est bien une image
+                        if (evt.item.classList.contains('media-type-video')) {
+                            return false;
+                        }
+                        evt.item.style.opacity = '0.5';
+                    },
+                    onEnd: function(evt) {
+                        evt.item.style.opacity = '1';
+                    },
+                    // Ne permettre le déplacement que des images
+                    onMove: function(evt) {
+                        return !evt.related.classList.contains('media-type-video');
+                    }
+                });
+            }
+            
+            console.log('Mode réorganisation activé');
+        });
+    } else {
+        console.error('Bouton enableReorder non trouvé dans le DOM');
+    }
+
+    // Annuler la réorganisation
+    const cancelReorderBtn = document.getElementById('cancelReorder');
+    if (cancelReorderBtn) {
+        cancelReorderBtn.addEventListener('click', function() {
+            console.log('Bouton Annuler cliqué'); // Debug
+            exitReorderMode();
+        });
+    }
+
+    // Enregistrer l'ordre
+    const saveOrderBtn = document.getElementById('saveOrder');
+    if (saveOrderBtn) {
+        saveOrderBtn.addEventListener('click', function() {
+            console.log('Bouton Enregistrer cliqué'); // Debug
+            
+            const mediaItems = document.querySelectorAll('.media-item');
+            const imageOrder = [];
+            
+            // Récupérer uniquement les images dans l'ordre actuel
+            mediaItems.forEach(item => {
+                if (item.getAttribute('data-type') === 'image') {
+                    const imageName = item.getAttribute('data-image');
+                    if (imageName) {
+                        imageOrder.push(imageName);
+                    }
+                }
+            });
+            
+            if (imageOrder.length === 0) {
+                alert('Aucune image à réorganiser');
+                return;
+            }
+            
+            console.log('Ordre des images à sauvegarder:', imageOrder);
+            
+            // Désactiver le bouton et afficher le loader
+            const saveBtn = document.getElementById('saveOrder');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sauvegarde...';
+            
+            // Envoyer la requête AJAX
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: {
+                    reorder: 'true',
+                    imageOrder: imageOrder
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Afficher le message de succès
+                        $('#ajax-messages').html(`
+                            <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-green-700">${response.message}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // Réactiver le bouton immédiatement
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalText;
+                        
+                        // Sortir du mode réorganisation et mettre à jour l'interface
+                        setTimeout(function() {
+                            exitReorderMode();
+                            
+                            // Mettre à jour l'ordre visuel dans l'interface
+                            updateImageBadges();
+                            
+                            // Faire défiler vers le message de succès
+                            $('html, body').animate({
+                                scrollTop: $('#ajax-messages').offset().top - 100
+                            }, 500);
+                        }, 300);
+                        
+                    } else {
+                        // Afficher l'erreur
+                        $('#ajax-messages').html(`
+                            <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700">${response.message}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // Réactiver le bouton
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalText;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erreur AJAX:', xhr.responseText);
+                    console.error('Status:', status);
+                    console.error('Error:', error);
+                    console.error('Response Status:', xhr.status);
+                    
+                    // Essayer de parser la réponse pour voir si c'est du JSON
+                    let errorMessage = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            errorMessage = response.message;
+                        }
+                    } catch (e) {
+                        // Si ce n'est pas du JSON, afficher les premiers caractères de la réponse
+                        if (xhr.responseText && xhr.responseText.length > 0) {
+                            errorMessage = 'Erreur serveur: ' + xhr.responseText.substring(0, 200) + '...';
+                        }
+                    }
+                    
+                    $('#ajax-messages').html(`
+                        <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">${errorMessage}</p>
+                                    <details class="mt-2">
+                                        <summary class="cursor-pointer text-xs text-red-600">Détails techniques</summary>
+                                        <pre class="text-xs mt-1 bg-red-100 p-2 rounded">${xhr.responseText || 'Aucune réponse du serveur'}</pre>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // Réactiver le bouton
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }
+            });
+        });
+    }
+    
+    console.log('Événements de réorganisation attachés avec succès');
+});
+
+function exitReorderMode() {
+    reorderMode = false;
+    
+    // Détruire l'instance Sortable
+    if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+    }
+    
+    // Remettre l'interface normale
+    $('#enableReorder').removeClass('hidden');
+    $('#saveOrder').addClass('hidden');
+    $('#cancelReorder').addClass('hidden');
+    $('#reorderInstructions').addClass('hidden');
+    $('.drag-handle').addClass('hidden');
+    $('#media-filters').removeClass('hidden');
+    
+    // Réactiver les autres boutons
+    $('button[onclick="toggleSelectionMode()"]').prop('disabled', false);
+    
+    console.log('Mode réorganisation désactivé');
+}
+
+// ===== FIN DU SYSTÈME DE RÉORGANISATION =====
+
+// Fonction pour mettre à jour les badges "Image principale" après réorganisation
+function updateImageBadges() {
+    // Supprimer tous les anciens badges "Image principale"
+    $('.main-image-badge').remove();
+    
+    // Trouver la première image dans l'ordre actuel et lui ajouter le badge
+    const firstImage = $('.media-type-image').first();
+    if (firstImage.length > 0) {
+        const imageInfo = firstImage.find('.media-card .p-4 > div > div').first();
+        if (imageInfo.length > 0) {
+            // Ajouter le nouveau badge "Image principale"
+            const badge = $(`
+                <span class="main-image-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                    <i class="fas fa-star mr-1"></i>
+                    Image principale
+                </span>
+            `);
+            
+            // Insérer le badge après le titre de l'image
+            imageInfo.find('h4').after(badge);
+        }
+    }
+    
+    console.log('Badges mis à jour - nouvelle image principale assignée');
+}
 </script>
 
 <style>
