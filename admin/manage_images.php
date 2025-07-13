@@ -1534,6 +1534,154 @@ function updateImageBadges() {
     
     console.log('Badges mis à jour - nouvelle image principale assignée');
 }
+
+// ===== SYSTÈME DE PREVIEW D'UPLOAD =====
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('images');
+    const dropZone = document.getElementById('drop-zone');
+    const dropContent = document.getElementById('drop-content');
+    const previewContainer = document.getElementById('preview-container');
+    const previewGrid = document.getElementById('preview-grid');
+    const fileInfo = document.getElementById('file-info');
+    const fileCount = document.getElementById('file-count');
+
+    // Gestion du drag & drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(this.files);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        dropZone.classList.add('upload-highlight');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('upload-highlight');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        handleFiles(files);
+    }
+
+    function handleFiles(files) {
+        const filesArray = Array.from(files);
+        
+        if (filesArray.length > 0) {
+            // Afficher le nombre de fichiers
+            fileCount.textContent = `${filesArray.length} fichier(s) sélectionné(s)`;
+            fileInfo.classList.remove('hidden');
+            
+            // Masquer le contenu par défaut et afficher les previews
+            dropContent.classList.add('hidden');
+            previewContainer.classList.remove('hidden');
+            
+            // Vider la grille de preview
+            previewGrid.innerHTML = '';
+            
+            // Créer les previews
+            filesArray.forEach((file, index) => {
+                createPreview(file, index);
+            });
+        } else {
+            // Réinitialiser si aucun fichier
+            resetPreview();
+        }
+    }
+
+    function createPreview(file, index) {
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        const previewItem = document.createElement('div');
+        previewItem.className = 'relative bg-gray-100 rounded-lg overflow-hidden';
+        
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview" class="w-full h-20 object-cover">
+                    <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 rounded">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-xs text-gray-600 truncate">${file.name}</p>
+                        <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else if (isVideo) {
+            previewItem.innerHTML = `
+                <div class="w-full h-20 bg-gray-300 flex items-center justify-center">
+                    <i class="fas fa-video text-gray-500 text-2xl"></i>
+                </div>
+                <div class="absolute top-1 right-1 bg-purple-500 text-white text-xs px-1 rounded">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="p-2">
+                    <p class="text-xs text-gray-600 truncate">${file.name}</p>
+                    <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                </div>
+            `;
+        } else {
+            previewItem.innerHTML = `
+                <div class="w-full h-20 bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-file text-red-400 text-2xl"></i>
+                </div>
+                <div class="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded">
+                    <i class="fas fa-exclamation"></i>
+                </div>
+                <div class="p-2">
+                    <p class="text-xs text-red-600 truncate">${file.name}</p>
+                    <p class="text-xs text-red-500">Non supporté</p>
+                </div>
+            `;
+        }
+        
+        previewGrid.appendChild(previewItem);
+    }
+
+    function resetPreview() {
+        dropContent.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+        fileInfo.classList.add('hidden');
+        previewGrid.innerHTML = '';
+        fileCount.textContent = '';
+    }
+
+    // Réinitialiser les previews après soumission réussie
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function() {
+            setTimeout(function() {
+                resetPreview();
+                fileInput.value = '';
+            }, 1000);
+        });
+    }
+});
+// ===== FIN DU SYSTÈME DE PREVIEW =====
 </script>
 
 <style>
