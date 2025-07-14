@@ -912,8 +912,15 @@ function clearSelection() {
 }
 
 function selectAll() {
-    $('.media-select').prop('checked', true);
-    $('.media-card').addClass('selected');
+    // Sélectionner seulement les éléments visibles selon le filtre actuel
+    $('.media-select').each(function() {
+        const mediaItem = $(this).closest('.media-item');
+        // Vérifier si l'élément est visible (pas caché par le filtre)
+        if (mediaItem.is(':visible')) {
+            $(this).prop('checked', true);
+            $(this).closest('.media-item').find('.media-card').addClass('selected');
+        }
+    });
     updateSelectionCount();
 }
 

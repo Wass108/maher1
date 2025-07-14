@@ -460,8 +460,15 @@ function clearSelection() {
 }
 
 function selectAll() {
-    $('.image-select').prop('checked', true);
-    $('.image-card').addClass('selected');
+    // Sélectionner seulement les éléments visibles selon le filtre actuel
+    $('.image-select').each(function() {
+        const mediaItem = $(this).closest('.image-container');
+        // Vérifier si l'élément est visible (pas caché par le filtre)
+        if (mediaItem.is(':visible')) {
+            $(this).prop('checked', true);
+            $(this).closest('.image-container').find('.image-card').addClass('selected');
+        }
+    });
     updateSelectionCount();
 }
 
