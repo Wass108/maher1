@@ -556,6 +556,14 @@ ob_end_flush();
                                 <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
                                     </div>
+                                    <div class="mt-4 flex justify-between items-center border-t border-gray-200 pt-4">
+                                        <button type="button" onclick="clearAllFiles()" 
+                                                class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Tout supprimer
+                                        </button>
+                                        <span id="preview-file-count" class="text-xs text-gray-500"></span>
+                                    </div>
                                 </div>
                                 <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
                             </label>
@@ -1584,6 +1592,81 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(files);
     }
 
+    function createPreview(file, index) {
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        const previewItem = document.createElement('div');
+        previewItem.className = 'relative bg-gray-100 rounded-lg overflow-hidden';
+        previewItem.setAttribute('data-file-index', index);
+        
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview" class="w-full h-20 object-cover">
+                    <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 rounded">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="absolute top-1 left-1">
+                        <button type="button" onclick="removeFileFromPreview(${index}, event)" 
+                                class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200"
+                                title="Supprimer ce fichier">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-xs text-gray-600 truncate">${file.name}</p>
+                        <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else if (isVideo) {
+            previewItem.innerHTML = `
+                <div class="w-full h-20 bg-gray-300 flex items-center justify-center">
+                    <i class="fas fa-video text-gray-500 text-2xl"></i>
+                </div>
+                <div class="absolute top-1 right-1 bg-purple-500 text-white text-xs px-1 rounded">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="absolute top-1 left-1">
+                    <button type="button" onclick="removeFileFromPreview(${index}, event)" 
+                            class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200"
+                            title="Supprimer ce fichier">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-2">
+                    <p class="text-xs text-gray-600 truncate">${file.name}</p>
+                    <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                </div>
+            `;
+        } else {
+            previewItem.innerHTML = `
+                <div class="w-full h-20 bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-file text-red-400 text-2xl"></i>
+                </div>
+                <div class="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded">
+                    <i class="fas fa-exclamation"></i>
+                </div>
+                <div class="absolute top-1 left-1">
+                    <button type="button" onclick="removeFileFromPreview(${index}, event)" 
+                            class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200"
+                            title="Supprimer ce fichier">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-2">
+                    <p class="text-xs text-red-600 truncate">${file.name}</p>
+                    <p class="text-xs text-red-500">Non supporté</p>
+                </div>
+            `;
+        }
+        
+        previewGrid.appendChild(previewItem);
+    }
+
     function handleFiles(files) {
         const filesArray = Array.from(files);
         
@@ -1609,58 +1692,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function createPreview(file, index) {
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        
-        const previewItem = document.createElement('div');
-        previewItem.className = 'relative bg-gray-100 rounded-lg overflow-hidden';
-        
-        if (isImage) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewItem.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" class="w-full h-20 object-cover">
-                    <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 rounded">
-                        <i class="fas fa-image"></i>
-                    </div>
-                    <div class="p-2">
-                        <p class="text-xs text-gray-600 truncate">${file.name}</p>
-                        <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                    </div>
-                `;
-            };
-            reader.readAsDataURL(file);
-        } else if (isVideo) {
-            previewItem.innerHTML = `
-                <div class="w-full h-20 bg-gray-300 flex items-center justify-center">
-                    <i class="fas fa-video text-gray-500 text-2xl"></i>
-                </div>
-                <div class="absolute top-1 right-1 bg-purple-500 text-white text-xs px-1 rounded">
-                    <i class="fas fa-video"></i>
-                </div>
-                <div class="p-2">
-                    <p class="text-xs text-gray-600 truncate">${file.name}</p>
-                    <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                </div>
-            `;
-        } else {
-            previewItem.innerHTML = `
-                <div class="w-full h-20 bg-red-100 flex items-center justify-center">
-                    <i class="fas fa-file text-red-400 text-2xl"></i>
-                </div>
-                <div class="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded">
-                    <i class="fas fa-exclamation"></i>
-                </div>
-                <div class="p-2">
-                    <p class="text-xs text-red-600 truncate">${file.name}</p>
-                    <p class="text-xs text-red-500">Non supporté</p>
-                </div>
-            `;
+    // Fonction pour supprimer un fichier de la preview (accessible globalement)
+    window.removeFileFromPreview = function(indexToRemove, event) {
+        // IMPORTANT: Empêcher la propagation pour éviter d'ouvrir la sélection de fichiers
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
         }
         
-        previewGrid.appendChild(previewItem);
-    }
+        const dt = new DataTransfer();
+        const files = Array.from(fileInput.files);
+        
+        // Recréer la liste des fichiers en excluant celui à supprimer
+        files.forEach((file, i) => {
+            if (i !== indexToRemove) {
+                dt.items.add(file);
+            }
+        });
+        
+        // Mettre à jour l'input file
+        fileInput.files = dt.files;
+        
+        // Rafraîchir la preview
+        handleFiles(fileInput.files);
+    };
+
+    // Fonction pour supprimer tous les fichiers
+    window.clearAllFiles = function(event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        if (confirm('Êtes-vous sûr de vouloir supprimer tous les fichiers sélectionnés ?')) {
+            fileInput.value = '';
+            resetPreview();
+        }
+    };
 
     function resetPreview() {
         dropContent.classList.remove('hidden');
