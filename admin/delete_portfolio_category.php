@@ -25,6 +25,7 @@ function getExistingCategories($portfolioMainDir) {
 }
 
 $portfolioMainDir = "../img/portfolio/";
+$portfolioVideoDir = "../videos/portfolio/";
 
 // Récupérer dynamiquement toutes les catégories existantes
 $categories = getExistingCategories($portfolioMainDir);
@@ -38,20 +39,24 @@ if (!isset($_GET['category']) || !in_array($_GET['category'], $categories)) {
 
 $category = $_GET['category'];
 $categoryDir = $portfolioMainDir . $category . "/";
+$categoryVideoDir = $portfolioVideoDir . $category . "/";
 
 // Traitement de la suppression
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
-    $deletedCount = 0;
-    $folderDeleted = false;
+    $deletedImageCount = 0;
+    $deletedVideoCount = 0;
+    $imageFolderDeleted = false;
+    $videoFolderDeleted = false;
     
+    // Supprimer les images
     if (is_dir($categoryDir)) {
         // Supprimer toutes les images dans le dossier
-        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG,webp}", GLOB_BRACE);
         
         foreach ($images as $image) {
             if (is_file($image)) {
                 if (unlink($image)) {
-                    $deletedCount++;
+                    $deletedImageCount++;
                 }
             }
         }
@@ -64,20 +69,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
             }
         }
         
-        // Supprimer le dossier lui-même
+        // Supprimer le dossier d'images lui-même
         if (rmdir($categoryDir)) {
-            $folderDeleted = true;
+            $imageFolderDeleted = true;
         }
     }
     
-    if ($deletedCount > 0 && $folderDeleted) {
-        $_SESSION['message'] = "La catégorie '$category' a été supprimée avec succès. $deletedCount image(s) supprimée(s) et le dossier a été supprimé.";
-    } elseif ($deletedCount > 0) {
-        $_SESSION['message'] = "$deletedCount image(s) supprimée(s) de la catégorie $category, mais le dossier n'a pas pu être supprimé.";
-    } elseif ($folderDeleted) {
-        $_SESSION['message'] = "Le dossier de la catégorie '$category' a été supprimé (aucune image trouvée).";
+    // Supprimer les vidéos
+    if (is_dir($categoryVideoDir)) {
+        // Supprimer toutes les vidéos dans le dossier
+        $videos = glob($categoryVideoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+        
+        foreach ($videos as $video) {
+            if (is_file($video)) {
+                if (unlink($video)) {
+                    $deletedVideoCount++;
+                }
+            }
+        }
+        
+        // Supprimer également tous les autres fichiers qui pourraient être présents
+        $allVideoFiles = glob($categoryVideoDir . "*");
+        foreach ($allVideoFiles as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        
+        // Supprimer le dossier de vidéos lui-même
+        if (rmdir($categoryVideoDir)) {
+            $videoFolderDeleted = true;
+        }
+    }
+    
+    // Construire le message de succès
+    $messages = [];
+    $totalDeleted = $deletedImageCount + $deletedVideoCount;
+    
+    if ($deletedImageCount > 0) {
+        $messages[] = "$deletedImageCount image(s) supprimée(s)";
+    }
+    if ($deletedVideoCount > 0) {
+        $messages[] = "$deletedVideoCount vidéo(s) supprimée(s)";
+    }
+    
+    if ($totalDeleted > 0) {
+        $mediaMessage = implode(' et ', $messages);
+        $_SESSION['message'] = "La catégorie '$category' a été supprimée avec succès. $mediaMessage.";
+    } elseif ($imageFolderDeleted || $videoFolderDeleted) {
+        $_SESSION['message'] = "La catégorie '$category' a été supprimée (dossiers vides supprimés).";
     } else {
-        $_SESSION['message'] = "Aucune image trouvée dans la catégorie $category et le dossier n'existait pas.";
+        $_SESSION['message'] = "Aucun contenu trouvé dans la catégorie '$category'. ";
     }
     
     // Déterminer la page de redirection basée sur le referer ou un paramètre
@@ -102,11 +144,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
     
     // Récupérer le nombre d'images et les informations détaillées
     $imageCount = 0;
+    $videoCount = 0;
     $totalSize = 0;
     $sampleImages = [];
+    $sampleVideos = [];
     
+    // Compter et analyser les images
     if (is_dir($categoryDir)) {
-        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG,webp}", GLOB_BRACE);
         $imageCount = count($images);
         
         // Calculer la taille totale et récupérer quelques images d'exemple
@@ -114,16 +159,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
             $size = filesize($image);
             $totalSize += $size;
             
-            // Récupérer les 3 premières images pour l'aperçu
-            if ($index < 3) {
+            // Récupérer les 2 premières images pour l'aperçu
+            if ($index < 2) {
                 $sampleImages[] = [
                     'name' => basename($image),
                     'url' => $image,
-                    'size' => $size
+                    'size' => $size,
+                    'type' => 'image'
                 ];
             }
         }
     }
+    
+    // Compter et analyser les vidéos
+    if (is_dir($categoryVideoDir)) {
+        $videos = glob($categoryVideoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+        $videoCount = count($videos);
+        
+        // Calculer la taille totale et récupérer quelques vidéos d'exemple
+        foreach ($videos as $index => $video) {
+            $size = filesize($video);
+            $totalSize += $size;
+            
+            // Récupérer les 2 premières vidéos pour l'aperçu
+            if ($index < 2) {
+                $sampleVideos[] = [
+                    'name' => basename($video),
+                    'url' => $video,
+                    'size' => $size,
+                    'type' => 'video'
+                ];
+            }
+        }
+    }
+    
+    // Combiner les échantillons pour l'aperçu (max 4 éléments)
+    $sampleMedia = array_merge($sampleImages, $sampleVideos);
+    $sampleMedia = array_slice($sampleMedia, 0, 4);
+    $totalMediaCount = $imageCount + $videoCount;
     
     ob_end_flush();
 ?>
@@ -175,6 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
                                 <h5 class="font-semibold text-red-800 mb-2">Cette action va :</h5>
                                 <ul class="list-disc list-inside text-red-700 space-y-1">
                                     <li>Supprimer <strong><?php echo $imageCount; ?> image(s)</strong> définitivement</li>
+                                    <li>Supprimer <strong><?php echo $videoCount; ?> vidéo(s)</strong> définitivement</li>
                                     <li>Libérer <strong><?php echo round($totalSize / 1024 / 1024, 2); ?> MB</strong> d'espace disque</li>
                                     <li>Supprimer le <strong>dossier de la catégorie</strong> entièrement</li>
                                     <li>Supprimer <strong>tout le contenu</strong> lié à cette catégorie</li>
@@ -186,15 +260,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
                         </div>
                     </div>
                 </div>
-                <?php if ($imageCount > 0): ?>
+                <?php if ($imageCount > 0 || $videoCount > 0): ?>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-gray-50 rounded-lg p-4 text-center">
-                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                <i class="fas fa-images text-red-600 text-xl"></i>
+                        <?php if ($imageCount > 0): ?>
+                            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-images text-red-600 text-xl"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">Images à supprimer</p>
+                                <p class="text-2xl font-bold text-gray-900"><?php echo $imageCount; ?></p>
                             </div>
-                            <p class="text-sm text-gray-600">Images à supprimer</p>
-                            <p class="text-2xl font-bold text-gray-900"><?php echo $imageCount; ?></p>
-                        </div>
+                        <?php endif; ?>
+                        <?php if ($videoCount > 0): ?>
+                            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-video text-red-600 text-xl"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">Vidéos à supprimer</p>
+                                <p class="text-2xl font-bold text-gray-900"><?php echo $videoCount; ?></p>
+                            </div>
+                        <?php endif; ?>
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                                 <i class="fas fa-hdd text-orange-600 text-xl"></i>
@@ -210,22 +295,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
                             <p class="text-lg font-bold text-gray-900 truncate"><?php echo htmlspecialchars($category); ?></p>
                         </div>
                     </div>
-                    <?php if (!empty($sampleImages)): ?>
+                    <?php if (!empty($sampleImages) || !empty($sampleVideos)): ?>
                         <div class="mb-6">
                             <h4 class="text-lg font-semibold text-gray-900 mb-4">
                                 <i class="fas fa-eye mr-2"></i>
-                                Aperçu des images qui seront supprimées
-                                <?php if ($imageCount > 3): ?>
-                                    <span class="text-sm text-gray-600">(<?php echo min(3, $imageCount); ?> sur <?php echo $imageCount; ?> affichées)</span>
+                                Aperçu des médias qui seront supprimés
+                                <?php if ($totalMediaCount > 4): ?>
+                                    <span class="text-sm text-gray-600">(<?php echo min(4, $totalMediaCount); ?> sur <?php echo $totalMediaCount; ?> affichées)</span>
                                 <?php endif; ?>
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <?php foreach ($sampleImages as $image): ?>
+                                <?php foreach ($sampleMedia as $media): ?>
                                     <div class="relative group">
                                         <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
-                                            <img src="<?php echo $image['url']; ?>" 
-                                                 alt="Image à supprimer" 
-                                                 class="w-full h-32 object-cover">
+                                            <?php if ($media['type'] === 'image'): ?>
+                                                <img src="<?php echo $media['url']; ?>" 
+                                                     alt="Image à supprimer" 
+                                                     class="w-full h-32 object-cover">
+                                            <?php else: ?>
+                                                <video class="w-full h-32 object-cover" muted>
+                                                    <source src="<?php echo $media['url']; ?>" type="video/mp4">
+                                                    Votre navigateur ne prend pas en charge la lecture vidéo.
+                                                </video>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="absolute inset-0 bg-red-500 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
                                             <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -233,18 +325,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
                                             </div>
                                         </div>
                                         <div class="mt-2">
-                                            <p class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($image['name']); ?>">
-                                                <?php echo htmlspecialchars($image['name']); ?>
+                                            <p class="text-xs font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($media['name']); ?>">
+                                                <?php echo htmlspecialchars($media['name']); ?>
                                             </p>
-                                            <p class="text-xs text-gray-500"><?php echo round($image['size'] / 1024, 1); ?> KB</p>
+                                            <p class="text-xs text-gray-500"><?php echo round($media['size'] / 1024, 1); ?> KB</p>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                            <?php if ($imageCount > 3): ?>
+                            <?php if ($totalMediaCount > 4): ?>
                                 <div class="mt-4 text-center">
                                     <p class="text-sm text-gray-600">
-                                        ... et <strong><?php echo $imageCount - 3; ?> autre(s) image(s)</strong> qui seront également supprimées
+                                        ... et <strong><?php echo $totalMediaCount - 4; ?> autre(s) média(s)</strong> qui seront également supprimés
                                     </p>
                                 </div>
                             <?php endif; ?>
@@ -380,6 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `Vous allez supprimer DÉFINITIVEMENT :\n` +
                 `- La catégorie "${categoryName}"\n` +
                 `- Toutes ses images (<?php echo $imageCount; ?>)\n` +
+                `- Toutes ses vidéos (<?php echo $videoCount; ?>)\n` +
                 `- Son dossier complet\n\n` +
                 `Cette action est IRRÉVERSIBLE !\n\n` +
                 `Cliquez sur OK pour procéder à la suppression.`

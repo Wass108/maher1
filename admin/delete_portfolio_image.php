@@ -2,7 +2,7 @@
 include "../connect/connect.php";
 include "auth_check.php";
 
-// Vérifier si la catégorie et l'image sont spécifiées
+// Vérifier si la catégorie et le média sont spécifiés
 if (!isset($_GET['category']) || !isset($_GET['image'])) {
     $_SESSION['error'] = "Paramètres manquants pour la suppression.";
     header("Location: portfolio.php");
@@ -10,7 +10,8 @@ if (!isset($_GET['category']) || !isset($_GET['image'])) {
 }
 
 $category = $_GET['category'];
-$imageName = $_GET['image'];
+$mediaName = $_GET['image']; // Peut être une image ou une vidéo
+$mediaType = isset($_GET['type']) ? $_GET['type'] : 'auto'; // 'image', 'video', ou 'auto'
 
 // Fonction pour récupérer dynamiquement toutes les catégories existantes
 function getExistingCategories($portfolioMainDir) {
@@ -31,6 +32,7 @@ function getExistingCategories($portfolioMainDir) {
 }
 
 $portfolioMainDir = "../img/portfolio/";
+$portfolioVideoDir = "../videos/portfolio/";
 $categories = getExistingCategories($portfolioMainDir);
 
 // Vérifier si la catégorie existe
@@ -40,18 +42,71 @@ if (!in_array($category, $categories)) {
     exit;
 }
 
-// Chemin de l'image à supprimer
-$imagePath = $portfolioMainDir . $category . "/" . $imageName;
+// Déterminer le type de média et les chemins possibles
+$imagePath = $portfolioMainDir . $category . "/" . $mediaName;
+$videoPath = $portfolioVideoDir . $category . "/" . $mediaName;
 
-// Vérifier si l'image existe et la supprimer
-if (file_exists($imagePath)) {
-    if (unlink($imagePath)) {
-        $_SESSION['message'] = "L'image '$imageName' a été supprimée avec succès.";
-    } else {
-        $_SESSION['error'] = "Échec de la suppression de l'image '$imageName'.";
+$deleted = false;
+$deletedType = '';
+
+// Si le type est spécifié, essayer de supprimer directement
+if ($mediaType === 'image') {
+    if (file_exists($imagePath)) {
+        if (unlink($imagePath)) {
+            $deleted = true;
+            $deletedType = 'image';
+        }
+    }
+} elseif ($mediaType === 'video') {
+    if (file_exists($videoPath)) {
+        if (unlink($videoPath)) {
+            $deleted = true;
+            $deletedType = 'vidéo';
+        }
     }
 } else {
-    $_SESSION['error'] = "Image '$imageName' introuvable.";
+    // Mode automatique : détecter le type de fichier par extension
+    $extension = strtolower(pathinfo($mediaName, PATHINFO_EXTENSION));
+    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
+    
+    if (in_array($extension, $imageExtensions)) {
+        // C'est probablement une image
+        if (file_exists($imagePath)) {
+            if (unlink($imagePath)) {
+                $deleted = true;
+                $deletedType = 'image';
+            }
+        }
+    } elseif (in_array($extension, $videoExtensions)) {
+        // C'est probablement une vidéo
+        if (file_exists($videoPath)) {
+            if (unlink($videoPath)) {
+                $deleted = true;
+                $deletedType = 'vidéo';
+            }
+        }
+    } else {
+        // Extension inconnue, essayer les deux emplacements
+        if (file_exists($imagePath)) {
+            if (unlink($imagePath)) {
+                $deleted = true;
+                $deletedType = 'image';
+            }
+        } elseif (file_exists($videoPath)) {
+            if (unlink($videoPath)) {
+                $deleted = true;
+                $deletedType = 'vidéo';
+            }
+        }
+    }
+}
+
+// Définir le message de retour
+if ($deleted) {
+    $_SESSION['message'] = "Le média '$mediaName' ($deletedType) a été supprimé avec succès.";
+} else {
+    $_SESSION['error'] = "Média '$mediaName' introuvable dans cette catégorie.";
 }
 
 // Déterminer la page de redirection basée sur le referer ou un paramètre
