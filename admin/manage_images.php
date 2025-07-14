@@ -3,6 +3,24 @@
 include "../connect/connect.php";
 include "admin_header_buffered.php";  // On utilise la version avec buffer
 
+// Fonction pour convertir les valeurs PHP (ex: "2M") en bytes
+function return_bytes($val) {
+    $val = trim($val);
+    $last = strtolower($val[strlen($val)-1]);
+    $val = (int)$val;
+    
+    switch($last) {
+        case 'g':
+            $val *= 1024;
+        case 'm':
+            $val *= 1024;
+        case 'k':
+            $val *= 1024;
+    }
+    
+    return $val;
+}
+
 // Vérifier si l'ID du projet est spécifié
 if (!isset($_GET['project'])) {
     header("Location: projects.php");
@@ -28,6 +46,24 @@ $error = '';
 
 // Traitement du téléchargement d'images et vidéos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
+    // Vérifier les limites PHP
+    $maxFileUploads = (int)ini_get('max_file_uploads');
+    $postMaxSize = ini_get('post_max_size');
+    $uploadMaxFilesize = ini_get('upload_max_filesize');
+    
+    // Compter le nombre de fichiers reçus
+    $fileCount = 0;
+    if (isset($_FILES['images']['tmp_name']) && is_array($_FILES['images']['tmp_name'])) {
+        $fileCount = count($_FILES['images']['tmp_name']);
+    }
+    
+    // Vérification des limites
+    if ($fileCount > $maxFileUploads) {
+        $_SESSION['error'] = "Trop de fichiers sélectionnés ! Maximum autorisé : $maxFileUploads fichiers à la fois. Vous avez sélectionné $fileCount fichiers.";
+        header("Location: manage_images.php?project=" . $projectId);
+        exit;
+    }
+
     $imageProjectDir = "../img/projects/" . $project['slug'] . "/";
     $videoProjectDir = "../videos/projects/" . $project['slug'] . "/";
     
@@ -1671,8 +1707,48 @@ document.addEventListener('DOMContentLoaded', function() {
         const filesArray = Array.from(files);
         
         if (filesArray.length > 0) {
-            // Afficher le nombre de fichiers
-            fileCount.textContent = `${filesArray.length} fichier(s) sélectionné(s)`;
+            // Vérifier la limite de fichiers côté client
+            const maxFiles = <?php echo (int)ini_get('max_file_uploads'); ?>;
+            if (filesArray.length > maxFiles) {
+                alert(`Trop de fichiers sélectionnés ! Maximum autorisé : ${maxFiles} fichiers à la fois.\nVous avez sélectionné ${filesArray.length} fichiers.\n\nVeuillez réduire le nombre de fichiers et réessayer.`);
+                fileInput.value = '';
+                resetPreview();
+                return;
+            }
+
+            // Vérifier la taille totale approximative (limite post_max_size)
+            const postMaxSizeBytes = <?php echo return_bytes(ini_get('post_max_size')); ?>;
+            const uploadMaxFilesizeBytes = <?php echo return_bytes(ini_get('upload_max_filesize')); ?>;
+            
+            let totalSize = 0;
+            let oversizedFiles = [];
+            
+            for (let file of filesArray) {
+                totalSize += file.size;
+                if (file.size > uploadMaxFilesizeBytes) {
+                    oversizedFiles.push(file.name);
+                }
+            }
+            
+            if (oversizedFiles.length > 0) {
+                alert(`Les fichiers suivants sont trop volumineux :\n• ${oversizedFiles.join('\n• ')}\n\nTaille maximum par fichier : <?php echo ini_get('upload_max_filesize'); ?>`);
+                fileInput.value = '';
+                resetPreview();
+                return;
+            }
+            
+            if (totalSize > postMaxSizeBytes) {
+                const totalSizeMB = Math.round(totalSize / 1024 / 1024);
+                const maxSizeMB = Math.round(postMaxSizeBytes / 1024 / 1024);
+                alert(`La taille totale des fichiers (${totalSizeMB} MB) dépasse la limite autorisée (${maxSizeMB} MB).\n\nVeuillez réduire le nombre de fichiers ou choisir des fichiers plus petits.`);
+                fileInput.value = '';
+                resetPreview();
+                return;
+            }
+
+            // Afficher le nombre de fichiers avec la taille totale
+            const totalSizeMB = Math.round(totalSize / 1024 / 1024 * 100) / 100;
+            fileCount.textContent = `${filesArray.length} fichier(s) sélectionné(s) (${totalSizeMB} MB total)`;
             fileInfo.classList.remove('hidden');
             
             // Masquer le contenu par défaut et afficher les previews

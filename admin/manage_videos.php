@@ -3,6 +3,24 @@
 include "../connect/connect.php";
 include "admin_header_buffered.php";  // On utilise la version avec buffer
 
+// Fonction pour convertir les valeurs PHP (ex: "2M") en bytes
+function return_bytes($val) {
+    $val = trim($val);
+    $last = strtolower($val[strlen($val)-1]);
+    $val = (int)$val;
+    
+    switch($last) {
+        case 'g':
+            $val *= 1024;
+        case 'm':
+            $val *= 1024;
+        case 'k':
+            $val *= 1024;
+    }
+    
+    return $val;
+}
+
 // Vérifier si l'ID du projet est spécifié
 if (!isset($_GET['project'])) {
     header("Location: projects.php");

@@ -3,6 +3,24 @@
 include "../connect/connect.php";
 include "admin_header_buffered.php";
 
+// Fonction pour convertir les valeurs PHP (ex: "2M") en bytes
+function return_bytes($val) {
+    $val = trim($val);
+    $last = strtolower($val[strlen($val)-1]);
+    $val = (int)$val;
+    
+    switch($last) {
+        case 'g':
+            $val *= 1024;
+        case 'm':
+            $val *= 1024;
+        case 'k':
+            $val *= 1024;
+    }
+    
+    return $val;
+}
+
 // Fonction pour récupérer dynamiquement toutes les catégories existantes
 function getExistingCategories($portfolioMainDir) {
     $categories = [];
@@ -41,75 +59,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
     if (!in_array($category, $categories)) {
         $_SESSION['error'] = "Catégorie invalide.";
     } else {
-        $imageCategoryDir = $portfolioMainDir . $category . "/";
-        $videoCategoryDir = $portfolioVideoDir . $category . "/";
+        // Vérifier les limites PHP
+        $maxFileUploads = (int)ini_get('max_file_uploads');
+        $postMaxSize = ini_get('post_max_size');
+        $uploadMaxFilesize = ini_get('upload_max_filesize');
         
-        // Créer les dossiers s'ils n'existent pas
-        if (!is_dir($imageCategoryDir)) {
-            mkdir($imageCategoryDir, 0777, true);
+        // Compter le nombre de fichiers reçus
+        $fileCount = 0;
+        if (isset($_FILES['images']['tmp_name']) && is_array($_FILES['images']['tmp_name'])) {
+            $fileCount = count($_FILES['images']['tmp_name']);
         }
-        if (!is_dir($videoCategoryDir)) {
-            mkdir($videoCategoryDir, 0777, true);
-        }
         
-        $imageUploadCount = 0;
-        $videoUploadCount = 0;
-        $errorCount = 0;
-        
-        // Traiter chaque fichier
-        foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
-            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
-                $fileName = $_FILES['images']['name'][$key];
-                $fileType = $_FILES['images']['type'][$key];
-                
-                // Détecter le type de fichier par extension aussi (pour plus de fiabilité)
-                $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
-                
-                $isImage = (strpos($fileType, 'image/') === 0) || in_array($extension, $imageExtensions);
-                $isVideo = (strpos($fileType, 'video/') === 0) || in_array($extension, $videoExtensions);
-                
-                if ($isImage) {
-                    // Générer un nom unique basé sur le timestamp pour les images
-                    $newFileName = time() . '_' . $key . '.' . $extension;
-                    $destination = $imageCategoryDir . $newFileName;
+        // Vérification des limites
+        if ($fileCount > $maxFileUploads) {
+            $_SESSION['error'] = "Trop de fichiers sélectionnés ! Maximum autorisé : $maxFileUploads fichiers à la fois. Vous avez sélectionné $fileCount fichiers.";
+        } else {
+            $imageCategoryDir = $portfolioMainDir . $category . "/";
+            $videoCategoryDir = $portfolioVideoDir . $category . "/";
+            
+            // Créer les dossiers s'ils n'existent pas
+            if (!is_dir($imageCategoryDir)) {
+                mkdir($imageCategoryDir, 0777, true);
+            }
+            if (!is_dir($videoCategoryDir)) {
+                mkdir($videoCategoryDir, 0777, true);
+            }
+            
+            $imageUploadCount = 0;
+            $videoUploadCount = 0;
+            $errorCount = 0;
+            $errorDetails = [];
+            
+            // Traiter chaque fichier
+            foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+                if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+                    $fileName = $_FILES['images']['name'][$key];
+                    $fileType = $_FILES['images']['type'][$key];
+                    $fileSize = $_FILES['images']['size'][$key];
                     
-                    if (move_uploaded_file($tmp_name, $destination)) {
-                        $imageUploadCount++;
+                    // Détecter le type de fichier par extension aussi (pour plus de fiabilité)
+                    $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp', 'ogv'];
+                    
+                    $isImage = (strpos($fileType, 'image/') === 0) || in_array($extension, $imageExtensions);
+                    $isVideo = (strpos($fileType, 'video/') === 0) || in_array($extension, $videoExtensions);
+                    
+                    if ($isImage) {
+                        // Générer un nom unique basé sur le timestamp pour les images
+                        $newFileName = time() . '_' . $key . '.' . $extension;
+                        $destination = $imageCategoryDir . $newFileName;
+                        
+                        if (move_uploaded_file($tmp_name, $destination)) {
+                            $imageUploadCount++;
+                        } else {
+                            $errorCount++;
+                            $errorDetails[] = "Impossible de sauvegarder l'image: $fileName";
+                        }
+                    } elseif ($isVideo) {
+                        // Générer un nom unique basé sur le timestamp pour les vidéos
+                        $newFileName = time() . '_' . $key . '.' . $extension;
+                        $destination = $videoCategoryDir . $newFileName;
+                        
+                        if (move_uploaded_file($tmp_name, $destination)) {
+                            $videoUploadCount++;
+                        } else {
+                            $errorCount++;
+                            $errorDetails[] = "Impossible de sauvegarder la vidéo: $fileName";
+                        }
                     } else {
                         $errorCount++;
-                    }
-                } elseif ($isVideo) {
-                    // Générer un nom unique basé sur le timestamp pour les vidéos
-                    $newFileName = time() . '_' . $key . '.' . $extension;
-                    $destination = $videoCategoryDir . $newFileName;
-                    
-                    if (move_uploaded_file($tmp_name, $destination)) {
-                        $videoUploadCount++;
-                    } else {
-                        $errorCount++;
+                        $errorDetails[] = "Format non supporté: $fileName";
                     }
                 } else {
                     $errorCount++;
+                    $fileName = $_FILES['images']['name'][$key];
+                    
+                    // Messages d'erreur détaillés selon le code d'erreur
+                    switch ($_FILES['images']['error'][$key]) {
+                        case UPLOAD_ERR_INI_SIZE:
+                            $errorDetails[] = "$fileName : Fichier trop volumineux (limite serveur: $uploadMaxFilesize)";
+                            break;
+                        case UPLOAD_ERR_FORM_SIZE:
+                            $errorDetails[] = "$fileName : Fichier trop volumineux (limite formulaire)";
+                            break;
+                        case UPLOAD_ERR_PARTIAL:
+                            $errorDetails[] = "$fileName : Upload incomplet";
+                            break;
+                        case UPLOAD_ERR_NO_FILE:
+                            $errorDetails[] = "$fileName : Aucun fichier reçu";
+                            break;
+                        case UPLOAD_ERR_NO_TMP_DIR:
+                            $errorDetails[] = "$fileName : Dossier temporaire manquant";
+                            break;
+                        case UPLOAD_ERR_CANT_WRITE:
+                            $errorDetails[] = "$fileName : Impossible d'écrire sur le disque";
+                            break;
+                        default:
+                            $errorDetails[] = "$fileName : Erreur inconnue";
+                    }
                 }
             }
-        }
-        
-        // Messages de feedback stockés en session
-        $messages = [];
-        if ($imageUploadCount > 0) {
-            $messages[] = "$imageUploadCount image(s) téléchargée(s)";
-        }
-        if ($videoUploadCount > 0) {
-            $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
-        }
-        
-        if (!empty($messages)) {
-            $_SESSION['message'] = implode(' et ', $messages) . " avec succès dans la catégorie $category.";
-        }
-        if ($errorCount > 0) {
-            $_SESSION['error'] = "$errorCount fichier(s) n'ont pas pu être téléchargés.";
+            
+            // Messages de feedback stockés en session
+            $messages = [];
+            if ($imageUploadCount > 0) {
+                $messages[] = "$imageUploadCount image(s) téléchargée(s)";
+            }
+            if ($videoUploadCount > 0) {
+                $messages[] = "$videoUploadCount vidéo(s) téléchargée(s)";
+            }
+            
+            if (!empty($messages)) {
+                $_SESSION['message'] = implode(' et ', $messages) . " avec succès dans la catégorie $category.";
+            }
+            if ($errorCount > 0) {
+                $errorSummary = "$errorCount fichier(s) n'ont pas pu être téléchargés";
+                if (!empty($errorDetails)) {
+                    $errorSummary .= " :\n• " . implode("\n• ", array_slice($errorDetails, 0, 5));
+                    if (count($errorDetails) > 5) {
+                        $errorSummary .= "\n• ... et " . (count($errorDetails) - 5) . " autre(s) erreur(s)";
+                    }
+                }
+                $_SESSION['error'] = $errorSummary;
+            }
         }
     }
     
@@ -373,6 +446,14 @@ ob_end_flush();
                                     </div>
                                     <div id="preview-container" class="hidden w-full p-4 max-h-64 overflow-y-auto border-t border-gray-200">
                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="preview-grid">
+                                        </div>
+                                        <div class="mt-4 flex justify-between items-center border-t border-gray-200 pt-4">
+                                            <button type="button" onclick="clearAllFiles(event)" 
+                                                    class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                                <i class="fas fa-trash mr-1"></i>
+                                                Tout supprimer
+                                            </button>
+                                            <span id="preview-file-count" class="text-xs text-gray-500"></span>
                                         </div>
                                     </div>
                                     <input id="images" name="images[]" type="file" class="hidden" multiple accept="image/*,video/*" required>
@@ -692,6 +773,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Vérifier la limite de fichiers côté client
+        const maxFiles = <?php echo (int)ini_get('max_file_uploads'); ?>;
+        if (files.length > maxFiles) {
+            alert(`Trop de fichiers sélectionnés ! Maximum autorisé : ${maxFiles} fichiers à la fois.\nVous avez sélectionné ${files.length} fichiers.\n\nVeuillez réduire le nombre de fichiers et réessayer.`);
+            fileInput.value = '';
+            showDropContent();
+            return;
+        }
+
         // Filtrer les fichiers médias (images ET vidéos)
         const mediaFiles = Array.from(files).filter(file => 
             file.type.startsWith('image/') || file.type.startsWith('video/')
@@ -701,6 +791,36 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (mediaFiles.length === 0) {
             alert('Veuillez sélectionner uniquement des fichiers image ou vidéo');
+            fileInput.value = '';
+            showDropContent();
+            return;
+        }
+
+        // Vérifier la taille totale approximative (limite post_max_size)
+        const postMaxSizeBytes = <?php echo return_bytes(ini_get('post_max_size')); ?>;
+        const uploadMaxFilesizeBytes = <?php echo return_bytes(ini_get('upload_max_filesize')); ?>;
+        
+        let totalSize = 0;
+        let oversizedFiles = [];
+        
+        for (let file of mediaFiles) {
+            totalSize += file.size;
+            if (file.size > uploadMaxFilesizeBytes) {
+                oversizedFiles.push(file.name);
+            }
+        }
+        
+        if (oversizedFiles.length > 0) {
+            alert(`Les fichiers suivants sont trop volumineux :\n• ${oversizedFiles.join('\n• ')}\n\nTaille maximum par fichier : <?php echo ini_get('upload_max_filesize'); ?>`);
+            fileInput.value = '';
+            showDropContent();
+            return;
+        }
+        
+        if (totalSize > postMaxSizeBytes) {
+            const totalSizeMB = Math.round(totalSize / 1024 / 1024);
+            const maxSizeMB = Math.round(postMaxSizeBytes / 1024 / 1024);
+            alert(`La taille totale des fichiers (${totalSizeMB} MB) dépasse la limite autorisée (${maxSizeMB} MB).\n\nVeuillez réduire le nombre de fichiers ou choisir des fichiers plus petits.`);
             fileInput.value = '';
             showDropContent();
             return;
@@ -718,6 +838,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             countText = `${videoFiles.length} vidéo(s) sélectionnée(s)`;
         }
+        
+        // Ajouter la taille totale
+        const totalSizeMB = Math.round(totalSize / 1024 / 1024 * 100) / 100;
+        countText += ` (${totalSizeMB} MB total)`;
 
         // Afficher les informations
         fileCount.textContent = countText;
@@ -801,6 +925,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         fileInput.files = dt.files;
         handleFiles(fileInput.files);
+    };
+
+    // Fonction pour supprimer tous les fichiers
+    window.clearAllFiles = function(event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        if (confirm('Êtes-vous sûr de vouloir supprimer tous les fichiers sélectionnés ?')) {
+            fileInput.value = '';
+            showDropContent();
+        }
     };
 
     // Gestion de la soumission du formulaire avec progress
