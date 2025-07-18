@@ -195,13 +195,8 @@ ob_end_flush();
                 <div class="flex items-center space-x-3">
                     <a href="manage_images.php?project=<?php echo $projectId; ?>" 
                        class="inline-flex items-center px-4 py-2 border border-purple-600 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
-                        <i class="fas fa-images mr-2"></i>
-                        Gérer les images
-                    </a>
-                    <a href="manage_videos.php?project=<?php echo $projectId; ?>"
-                       class="inline-flex items-center px-4 py-2 border border-orange-600 rounded-md text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
-                        <i class="fas fa-video mr-2"></i>
-                        Gérer les vidéos
+                        <i class="fas fa-photo-video mr-2"></i>
+                        Gérer les médias
                     </a>
                 </div>
             </div>
@@ -413,13 +408,8 @@ ob_end_flush();
                     </a>
                     <a href="manage_images.php?project=<?php echo $projectId; ?>" 
                        class="px-4 py-2 border border-purple-300 rounded-md text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
-                        <i class="fas fa-images mr-2"></i>
-                        Gérer les images
-                    </a>
-                    <a href="manage_videos.php?project=<?php echo $projectId; ?>"
-                       class="px-4 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
-                        <i class="fas fa-video mr-2"></i>
-                        Gérer les vidéos
+                        <i class="fas fa-photo-video mr-2"></i>
+                        Gérer les médias
                     </a>
                 </div>
                 <div class="flex space-x-3">

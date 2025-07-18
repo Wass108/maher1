@@ -422,11 +422,16 @@ ob_end_flush();
         </div>
     </div>
 </div>
+<?php include "admin_footer.php"; ?>
+
+<!-- Ajouter jQuery AVANT le script principal -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 <script>
 let selectionMode = false;
 
 function toggleSelectionMode() {
+    console.log('Toggle selection mode:', !selectionMode); // Debug
     selectionMode = !selectionMode;
     
     if (selectionMode) {
@@ -436,12 +441,15 @@ function toggleSelectionMode() {
         $('#selection-controls').removeClass('hidden');
         $('#bulk-actions').removeClass('hidden');
         $('#category-actions').addClass('hidden');
+        
+        console.log('Mode sélection activé'); // Debug
     } else {
         exitSelectionMode();
     }
 }
 
 function exitSelectionMode() {
+    console.log('Exit selection mode'); // Debug
     selectionMode = false;
     
     // Désactiver le mode sélection
@@ -489,6 +497,8 @@ function invertSelection() {
 function updateSelectionCount() {
     const selectedCount = $('.image-select:checked').length;
     $('#selected-count').text(selectedCount);
+    
+    console.log('Selected count:', selectedCount); // Debug
     
     // Mettre à jour l'apparence des cartes
     $('.image-select').each(function() {
@@ -603,20 +613,53 @@ function deleteSelectedImages() {
     });
 }
 
-// Permettre de cliquer sur la carte pour sélectionner/désélectionner
-$(document).on('click', '.image-card.selection-mode', function(e) {
-    // Éviter le conflit avec les boutons d'action
-    if ($(e.target).closest('.image-actions, .image-checkbox').length > 0) {
-        return;
-    }
-    
-    const checkbox = $(this).find('.image-select');
-    checkbox.prop('checked', !checkbox.prop('checked'));
-    checkbox.trigger('change');
-});
-
-// Initialiser les événements quand la page est chargée
+// Attendre que le document soit prêt avant d'ajouter les événements
 $(document).ready(function() {
+    console.log('Document ready, initializing events'); // Debug
+    
+    // Gestionnaire d'événement pour le clic sur les cartes d'images
+    $(document).on('click', '.image-container', function(e) {
+        console.log('Click on image container, selection mode:', selectionMode); // Debug
+        
+        // Seulement si on est en mode sélection
+        if (!selectionMode) {
+            console.log('Not in selection mode, ignoring click'); // Debug
+            return;
+        }
+        
+        // Éviter le conflit avec les boutons d'action et la checkbox
+        if ($(e.target).closest('.image-actions, .image-checkbox').length > 0) {
+            console.log('Click on action button or checkbox, ignoring'); // Debug
+            return;
+        }
+        
+        // Éviter le conflit avec les liens et boutons
+        if ($(e.target).is('a, button') || $(e.target).closest('a, button').length > 0) {
+            console.log('Click on link or button, ignoring'); // Debug
+            return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Processing click for selection'); // Debug
+        
+        const checkbox = $(this).find('.image-select');
+        const isCurrentlyChecked = checkbox.prop('checked');
+        checkbox.prop('checked', !isCurrentlyChecked);
+        
+        console.log('Checkbox state changed from', isCurrentlyChecked, 'to', !isCurrentlyChecked); // Debug
+        
+        // Déclencher l'événement change pour mettre à jour l'interface
+        checkbox.trigger('change');
+    });
+    
+    // Gestionnaire pour le changement des checkboxes
+    $(document).on('change', '.image-select', function() {
+        console.log('Checkbox changed:', $(this).val(), 'checked:', $(this).prop('checked')); // Debug
+        updateSelectionCount();
+    });
+    
     updateSelectionCount();
 });
 
@@ -751,5 +794,3 @@ document.addEventListener('keydown', function(e) {
     }
 }
 </style>
-
-<?php include "admin_footer.php"; ?>

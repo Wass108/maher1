@@ -1459,18 +1459,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = originalText;
                         
-                        // Sortir du mode réorganisation et mettre à jour l'interface
+                        // Recharger la page après sauvegarde pour afficher les nouveaux noms de fichiers
                         setTimeout(function() {
-                            exitReorderMode();
-                            
-                            // Mettre à jour l'ordre visuel dans l'interface
-                            updateImageBadges();
-                            
-                            // Faire défiler vers le message de succès
-                            $('html, body').animate({
-                                scrollTop: $('#ajax-messages').offset().top - 100
-                            }, 500);
-                        }, 300);
+                            location.reload();
+                        }, 1000);
                         
                     } else {
                         // Afficher l'erreur
@@ -1559,6 +1551,9 @@ function exitReorderMode() {
     
     // Réactiver les autres boutons
     $('button[onclick="toggleSelectionMode()"]').prop('disabled', false);
+    
+    // Recharger la page pour remettre l'ordre original
+    location.reload();
     
     console.log('Mode réorganisation désactivé');
 }
