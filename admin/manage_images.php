@@ -1242,6 +1242,11 @@ function deleteSelectedItems() {
 
 // Fonction pour ouvrir la modal vidéo
 function openVideoModal(videoPath) {
+    // Ne pas ouvrir la modal si on est en mode sélection
+    if (selectionMode) {
+        return false;
+    }
+    
     // Créer la modal si elle n'existe pas
     let modal = document.getElementById('videoModal');
     if (!modal) {
@@ -1585,6 +1590,21 @@ function updateImageBadges() {
     
     console.log('Badges mis à jour - nouvelle image principale assignée');
 }
+
+// Permettre de cliquer sur la carte pour sélectionner/désélectionner
+$(document).on('click', '.media-card.selection-mode', function(e) {
+    // Éviter le conflit avec les boutons d'action et les cases à cocher
+    if ($(e.target).closest('.media-actions, .media-checkbox, .drag-handle').length > 0) {
+        return;
+    }
+    
+    // Trouver la case à cocher correspondante
+    const checkbox = $(this).closest('.media-item').find('.media-select');
+    
+    // Inverser l'état de la case à cocher
+    checkbox.prop('checked', !checkbox.prop('checked'));
+    checkbox.trigger('change');
+});
 
 // ===== SYSTÈME DE PREVIEW D'UPLOAD =====
 document.addEventListener('DOMContentLoaded', function() {

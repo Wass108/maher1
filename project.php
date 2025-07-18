@@ -224,6 +224,26 @@ $imageCount = count($images);
         modal.style.display = "none";
     }
 
+    // Fermer la modal en cliquant en dehors de la vidéo
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById("videoModal");
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                // Fermer seulement si on clique sur le fond (modal) et pas sur le contenu vidéo
+                if (e.target === modal) {
+                    closeVideoModal();
+                }
+            });
+        }
+    });
+
+    // Fermer la modal avec la touche Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeVideoModal();
+        }
+    });
+
     // Initialisation du slider seulement s'il y a plus d'une image
     $(document).ready(function() {
         var imageCount = <?php echo $imageCount; ?>;

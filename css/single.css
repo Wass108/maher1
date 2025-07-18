@@ -820,3 +820,40 @@
     }
 }
 
+/*----------------------------------------*/
+/*  Project Single Page CSS
+/*----------------------------------------*/
+.section.sec-3 .col-lg-6 img {
+    width: 100%;
+    height: 400px; /* Hauteur fixe */
+    object-fit: cover; /* Maintient les proportions en rognant si nécessaire */
+    object-position: center; /* Centre l'image */
+    border-radius: 8px; /* Coins arrondis pour un look moderne */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Ombre légère */
+    transition: transform 0.3s ease; /* Animation au survol */
+}
+
+.section.sec-3 .col-lg-6 img:hover {
+    transform: scale(1.02); /* Légère augmentation au survol */
+}
+
+/* Alternative avec object-fit: contain pour voir l'image entière */
+.section.sec-3 .col-lg-6 img.contain-mode {
+    object-fit: contain; /* Pour voir l'image entière sans rogner */
+    background-color: #f8f9fa; /* Fond pour les espaces vides */
+}
+
+/* Responsive pour les petits écrans */
+@media (max-width: 768px) {
+    .section.sec-3 .col-lg-6 img {
+        height: 300px; /* Hauteur plus petite sur mobile */
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .section.sec-3 .col-lg-6 img {
+        height: 250px; /* Hauteur encore plus petite sur très petit écran */
+    }
+}
+
