@@ -46,6 +46,9 @@ $videos = array_map(function($path) {
     // Remplacer les espaces par %20 dans les chemins de vidéos pour l'URL
     return ['video_path' => str_replace(' ', '%20', $path)];
 }, $videosFromFolder);
+
+// Compter le nombre d'images pour adapter le slider
+$imageCount = count($images);
 ?>
 
 <link rel="stylesheet" href="css/single.css">
@@ -65,8 +68,23 @@ $videos = array_map(function($path) {
         </div>
     </div>
     <!-- Hero slider area -->
-    <div class="hero-slider">
-        <?php if (!empty($images)): ?>
+    <?php if ($imageCount === 1): ?>
+        <!-- Affichage statique pour une seule image -->
+        <div class="hero-single-image">
+            <div class="hero-slide-item set-bg" data-setbg="<?php echo $images[0]['image_path']; ?>">
+                <div class="slide-inner">
+                    <div class="slide-content">
+                        <h2><?php echo htmlspecialchars($projectDetails['title']); ?></h2><br>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num-holder">
+            <span>01</span> / 01
+        </div>
+    <?php elseif ($imageCount > 1): ?>
+        <!-- Slider Owl Carousel pour plusieurs images -->
+        <div class="hero-slider">
             <?php foreach ($images as $index => $img): ?>
                 <div class="hero-slide-item set-bg" data-setbg="<?php echo $img['image_path']; ?>">
                     <div class="slide-inner">
@@ -78,11 +96,20 @@ $videos = array_map(function($path) {
                     </div>
                 </div>
             <?php endforeach; ?>
-        <?php else: ?>
-            <p>Aucune image disponible.</p>
-        <?php endif; ?>
-    </div>
-    <div class="slide-num-holder" id="snh-1"></div>
+        </div>
+        <div class="slide-num-holder" id="snh-1"></div>
+    <?php else: ?>
+        <!-- Aucune image disponible -->
+        <div class="hero-no-image">
+            <div class="slide-inner">
+                <div class="slide-content">
+                    <h2><?php echo htmlspecialchars($projectDetails['title']); ?></h2>
+                    <p>Aucune image disponible pour ce projet.</p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    
     <div class="hero-right-text">architecture</div>
 </section>
 <!-- Hero section end -->
@@ -196,4 +223,43 @@ $videos = array_map(function($path) {
         
         modal.style.display = "none";
     }
+
+    // Initialisation du slider seulement s'il y a plus d'une image
+    $(document).ready(function() {
+        var imageCount = <?php echo $imageCount; ?>;
+        
+        if (imageCount > 1) {
+            // Configuration du slider pour plusieurs images
+            var hero_s = $(".hero-slider");
+            hero_s.owlCarousel({
+                loop: true,
+                margin: 0,
+                nav: true,
+                items: 1,
+                dots: false,
+                animateOut: 'fadeOutRight',
+                animateIn: 'fadeInLeft',
+                navText: ['<i class="fa fa-long-arrow-left"></i> PREV', 'NEXT<i class="fa fa-long-arrow-right"></i>'],
+                smartSpeed: 1200,
+                autoHeight: false,
+                autoplay: true,
+                mouseDrag: false,
+                onInitialized: function() {
+                    var a = this.items().length;
+                    if(a < 10){
+                        $("#snh-1").html("<span>01" + " / </span>0" + a);
+                    } else{
+                        $("#snh-1").html("<span>01" + " / </span>" + a);
+                    }
+                }
+            }).on("changed.owl.carousel", function(a) {
+                var b = --a.item.index, a = a.item.count;
+                if(a < 10){
+                    $("#snh-1").html("<span>0" + ( 1 > b ? b + a : b > a ? b - a : b) + " / </span>0" + a);
+                } else{
+                    $("#snh-1").html("<span> "+ (1 > b ? b + a : b > a ? b - a : b) + " / </span>" + a);
+                }
+            });
+        }
+    });
 </script>
