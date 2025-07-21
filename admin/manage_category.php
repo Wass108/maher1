@@ -44,6 +44,120 @@ $categoryVideoDir = $portfolioVideoDir . $category . "/";
 $message = '';
 $error = '';
 
+// Traitement de la réorganisation des images par AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST['reorder'] === 'true') {
+    // IMPORTANT: Stopper complètement le buffer de sortie pour les requêtes AJAX
+    if (ob_get_level()) {
+        ob_end_clean(); // Nettoyer le buffer au lieu de le vider
+    }
+    
+    header('Content-Type: application/json');
+    
+    if (isset($_POST['imageOrder']) && is_array($_POST['imageOrder'])) {
+        $tempDir = $categoryDir . "temp_reorder/";
+        
+        try {
+            // Nettoyer et créer un dossier temporaire unique
+            if (is_dir($tempDir)) {
+                // Supprimer le contenu du dossier temporaire s'il existe
+                $files = glob($tempDir . '*');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
+                rmdir($tempDir);
+            }
+            
+            if (!mkdir($tempDir, 0777, true)) {
+                throw new Exception("Impossible de créer le dossier temporaire");
+            }
+            
+            // Récupérer les images existantes
+            $existingImages = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+            $existingImageNames = array_map('basename', $existingImages);
+            
+            // Vérifier que toutes les images demandées existent
+            foreach ($_POST['imageOrder'] as $imageName) {
+                if (!in_array($imageName, $existingImageNames)) {
+                    throw new Exception("Image non trouvée: " . $imageName);
+                }
+            }
+            
+            // Copier les images dans l'ordre spécifié avec une numérotation séquentielle
+            $counter = 1;
+            $imageMapping = [];
+            foreach ($_POST['imageOrder'] as $imageName) {
+                $originalPath = $categoryDir . $imageName;
+                $extension = pathinfo($imageName, PATHINFO_EXTENSION);
+                $newName = sprintf("%02d.%s", $counter, $extension);
+                $tempPath = $tempDir . $newName;
+                
+                if (!copy($originalPath, $tempPath)) {
+                    throw new Exception("Impossible de copier l'image: " . $imageName);
+                }
+                
+                $imageMapping[$imageName] = $newName;
+                $counter++;
+            }
+            
+            // Supprimer les anciennes images
+            foreach ($existingImages as $imagePath) {
+                if (!unlink($imagePath)) {
+                    throw new Exception("Impossible de supprimer l'ancienne image: " . basename($imagePath));
+                }
+            }
+            
+            // Déplacer les nouvelles images réorganisées
+            foreach ($imageMapping as $oldName => $newName) {
+                $tempPath = $tempDir . $newName;
+                $finalPath = $categoryDir . $newName;
+                
+                if (!rename($tempPath, $finalPath)) {
+                    throw new Exception("Impossible de déplacer l'image réorganisée: " . $newName);
+                }
+            }
+            
+            // Nettoyer le dossier temporaire
+            if (is_dir($tempDir)) {
+                rmdir($tempDir);
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'L\'ordre des images a été sauvegardé avec succès.'
+            ]);
+            
+        } catch (Exception $e) {
+            // En cas d'erreur, essayer de restaurer depuis le dossier temporaire
+            if (is_dir($tempDir)) {
+                $tempFiles = glob($tempDir . '*');
+                foreach ($tempFiles as $tempFile) {
+                    $fileName = basename($tempFile);
+                    $finalPath = $categoryDir . $fileName;
+                    if (file_exists($tempFile)) {
+                        copy($tempFile, $finalPath);
+                        unlink($tempFile);
+                    }
+                }
+                rmdir($tempDir);
+            }
+            
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur lors de la réorganisation: ' . $e->getMessage()
+            ]);
+        }
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Données de réorganisation invalides.'
+        ]);
+    }
+    
+    exit;
+}
+
 // Traitement du renommage de la catégorie
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_category'])) {
     $newCategoryName = trim($_POST['new_category_name']);
@@ -77,6 +191,11 @@ $categoryVideos = [];
 
 if (is_dir($categoryDir)) {
     $images = glob($categoryDir . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+    // Trier les images par nom de fichier pour maintenir l'ordre numérique
+    usort($images, function($a, $b) {
+        return strnatcmp(basename($a), basename($b));
+    });
+    
     foreach ($images as $image) {
         $categoryImages[] = [
             'path' => $image,
@@ -91,6 +210,11 @@ if (is_dir($categoryDir)) {
 
 if (is_dir($categoryVideoDir)) {
     $videos = glob($categoryVideoDir . "*.{mp4,avi,mov,wmv,flv,webm,mkv,3gp,ogv}", GLOB_BRACE);
+    // Trier les vidéos par nom de fichier
+    usort($videos, function($a, $b) {
+        return strnatcmp(basename($a), basename($b));
+    });
+    
     foreach ($videos as $video) {
         $categoryVideos[] = [
             'path' => $video,
@@ -103,13 +227,8 @@ if (is_dir($categoryVideoDir)) {
     }
 }
 
-// Combiner images et vidéos
+// Combiner images et vidéos mais garder les images triées en premier
 $categoryMedia = array_merge($categoryImages, $categoryVideos);
-
-// Trier par date de modification (plus récent en premier)
-usort($categoryMedia, function($a, $b) {
-    return $b['modified'] - $a['modified'];
-});
 
 // Calculer les statistiques
 $totalImages = count($categoryImages);
@@ -260,11 +379,11 @@ ob_end_flush();
                             <?php echo $totalVideos; ?> vidéo(s)
                         </span>
                     </h3>
-                    <p class="text-sm text-gray-600 mt-1">Triés par date de modification • <?php echo $totalMedia; ?> média(s) au total</p>
+                    <p class="text-sm text-gray-600 mt-1">Les images sont triées par ordre numérique • <?php echo $totalMedia; ?> média(s) au total</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <!-- Filtres de type de média -->
-                    <div class="flex items-center space-x-1 mr-4">
+                    <div id="media-filters" class="flex items-center space-x-1 mr-4">
                         <button type="button" onclick="filterMedia('all')" id="filter-all"
                                 class="media-filter-btn active inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                             <i class="fas fa-th mr-1"></i>
@@ -295,12 +414,34 @@ ob_end_flush();
                                 Annuler
                             </button>
                         </div>
+                        
+                        <!-- Contrôles de réorganisation -->
+                        <div id="reorder-actions" class="hidden space-x-2">
+                            <button id="saveOrder" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
+                                <i class="fas fa-save mr-2"></i>
+                                Enregistrer l'ordre
+                            </button>
+                            <button id="cancelReorder" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-times mr-2"></i>
+                                Annuler
+                            </button>
+                        </div>
+                        
                         <div id="category-actions" class="flex items-center space-x-2">
                             <button type="button" onclick="toggleSelectionMode()"
                                     class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                                 <i class="fas fa-check-square mr-2"></i>
                                 Sélection multiple
                             </button>
+                            
+                            <?php if ($totalImages > 1): ?>
+                                <button id="enableReorder" type="button"
+                                        class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                    <i class="fas fa-arrows-alt mr-2"></i>
+                                    Réorganiser
+                                </button>
+                            <?php endif; ?>
+                            
                             <a href="empty_portfolio_category.php?category=<?php echo urlencode($category); ?>&redirect=manage_category" 
                                onclick="return confirm('Êtes-vous sûr de vouloir vider cette catégorie ? Tous les médias seront supprimés mais la catégorie restera.');"
                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200">
@@ -317,10 +458,12 @@ ob_end_flush();
                     <?php endif; ?>
                 </div>
             </div>
+            
         </div>
         <div class="p-6">
             <?php if (!empty($categoryMedia)): ?>
                 <div id="ajax-messages" class="mb-6"></div>
+                
                 <div id="selection-controls" class="hidden mb-6">
                     <div class="flex items-center space-x-3">
                         <button type="button" onclick="selectAll()"
@@ -340,13 +483,43 @@ ob_end_flush();
                         </button>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                
+                <div id="reorderInstructions" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Mode de réorganisation:</strong> Seules les images peuvent être réorganisées. Glissez et déposez les images pour modifier leur ordre. Les vidéos restent en place. N'oubliez pas de cliquer sur "Enregistrer l'ordre" lorsque vous avez terminé.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Conteneur principal pour tous les médias -->
+                <div id="mediaGallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <?php foreach ($categoryMedia as $media): ?>
-                        <div class="image-container relative group" data-image="<?php echo htmlspecialchars($media['name']); ?>">
+                        <div class="media-item image-container relative group <?php echo $media['type'] === 'image' ? 'media-type-image' : 'media-type-video'; ?>" 
+                             data-image="<?php echo htmlspecialchars($media['name']); ?>" 
+                             data-type="<?php echo $media['type']; ?>">
+                            
+                            <!-- Checkbox pour sélection multiple -->
                             <div class="image-checkbox absolute top-3 right-3 z-10 hidden">
                                 <input type="checkbox" class="image-select h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                       value="<?php echo htmlspecialchars($media['name']); ?>" onchange="updateSelectionCount()">
+                                       value="<?php echo htmlspecialchars($media['name']); ?>" 
+                                       data-type="<?php echo $media['type']; ?>" 
+                                       onchange="updateSelectionCount()">
                             </div>
+                            
+                            <!-- Poignée de drag pour réorganisation (seulement pour les images) -->
+                            <?php if ($media['type'] === 'image'): ?>
+                                <div class="drag-handle hidden cursor-move bg-blue-50 border border-blue-200 text-center py-2 rounded-t-lg">
+                                    <i class="fas fa-grip-vertical text-blue-600"></i>
+                                    <span class="text-xs text-blue-700 ml-2">Déplacer</span>
+                                </div>
+                            <?php endif; ?>
+                            
                             <div class="image-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                                 <div class="aspect-w-1 aspect-h-1 bg-gray-100">
                                     <?php if ($media['type'] === 'image'): ?>
@@ -424,14 +597,25 @@ ob_end_flush();
 </div>
 <?php include "admin_footer.php"; ?>
 
-<!-- Ajouter jQuery AVANT le script principal -->
+<!-- Ajouter les librairies nécessaires pour le drag & drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+
 <script>
+// Variables globales pour éviter les conflits
 let selectionMode = false;
+let reorderMode = false;
+let sortableInstance = null;
+let originalOrder = []; // Sauvegarde de l'ordre original
 
 function toggleSelectionMode() {
-    console.log('Toggle selection mode:', !selectionMode); // Debug
+    // Vérifier qu'on n'est pas en mode réorganisation
+    if (reorderMode) {
+        alert('Veuillez d\'abord quitter le mode de réorganisation avant d\'activer la sélection multiple');
+        return;
+    }
+    
     selectionMode = !selectionMode;
     
     if (selectionMode) {
@@ -441,6 +625,9 @@ function toggleSelectionMode() {
         $('#selection-controls').removeClass('hidden');
         $('#bulk-actions').removeClass('hidden');
         $('#category-actions').addClass('hidden');
+        
+        // Désactiver le bouton de réorganisation pendant la sélection
+        $('#enableReorder').prop('disabled', true);
         
         console.log('Mode sélection activé'); // Debug
     } else {
@@ -459,6 +646,9 @@ function exitSelectionMode() {
     $('#selection-controls').addClass('hidden');
     $('#bulk-actions').addClass('hidden');
     $('#category-actions').removeClass('hidden');
+    
+    // Réactiver le bouton de réorganisation
+    $('#enableReorder').prop('disabled', false);
     
     updateSelectionCount();
 }
@@ -613,184 +803,470 @@ function deleteSelectedImages() {
     });
 }
 
-// Attendre que le document soit prêt avant d'ajouter les événements
-$(document).ready(function() {
-    console.log('Document ready, initializing events'); // Debug
-    
-    // Gestionnaire d'événement pour le clic sur les cartes d'images
-    $(document).on('click', '.image-container', function(e) {
-        console.log('Click on image container, selection mode:', selectionMode); // Debug
-        
-        // Seulement si on est en mode sélection
-        if (!selectionMode) {
-            console.log('Not in selection mode, ignoring click'); // Debug
-            return;
-        }
-        
-        // Éviter le conflit avec les boutons d'action et la checkbox
-        if ($(e.target).closest('.image-actions, .image-checkbox').length > 0) {
-            console.log('Click on action button or checkbox, ignoring'); // Debug
-            return;
-        }
-        
-        // Éviter le conflit avec les liens et boutons
-        if ($(e.target).is('a, button') || $(e.target).closest('a, button').length > 0) {
-            console.log('Click on link or button, ignoring'); // Debug
-            return;
-        }
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Processing click for selection'); // Debug
-        
-        const checkbox = $(this).find('.image-select');
-        const isCurrentlyChecked = checkbox.prop('checked');
-        checkbox.prop('checked', !isCurrentlyChecked);
-        
-        console.log('Checkbox state changed from', isCurrentlyChecked, 'to', !isCurrentlyChecked); // Debug
-        
-        // Déclencher l'événement change pour mettre à jour l'interface
-        checkbox.trigger('change');
-    });
-    
-    // Gestionnaire pour le changement des checkboxes
-    $(document).on('change', '.image-select', function() {
-        console.log('Checkbox changed:', $(this).val(), 'checked:', $(this).prop('checked')); // Debug
-        updateSelectionCount();
-    });
-    
-    updateSelectionCount();
-});
-
-// Fonctions de filtrage des médias (comme dans manage_images.php)
-function filterMedia(type) {
-    // Réinitialiser les boutons de filtre
-    document.querySelectorAll('.media-filter-btn').forEach(btn => {
-        btn.classList.remove('active', 'bg-blue-500', 'text-white');
-        btn.classList.add('text-gray-700', 'bg-white');
-    });
-    
-    // Activer le bouton sélectionné
-    const activeBtn = document.getElementById(`filter-${type}`);
-    activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
-    activeBtn.classList.remove('text-gray-700', 'bg-white');
-    
-    // Filtrer les éléments
-    const mediaItems = document.querySelectorAll('.image-container');
-    
-    mediaItems.forEach(item => {
-        const isVideo = item.querySelector('video') !== null;
-        const isImage = item.querySelector('img') !== null;
-        
-        if (type === 'all') {
-            item.style.display = 'block';
-        } else if (type === 'images' && isImage) {
-            item.style.display = 'block';
-        } else if (type === 'videos' && isVideo) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-// Fonction pour ouvrir la modal vidéo
-function openVideoModal(videoPath) {
-    let modal = document.getElementById('videoModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'videoModal';
-        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;';
-        
-        modal.innerHTML = `
-            <div style="position: relative; max-width: 90%; max-height: 90%;">
-                <button onclick="closeVideoModal()" style="position: absolute; top: -40px; right: 0; background: #3b82f6; color: white; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; font-weight: 700;">&times;</button>
-                <video id="modalVideo" controls style="width: 100%; height: auto; max-height: 80vh;">
-                    <source src="" type="video/mp4">
-                    Votre navigateur ne supporte pas la lecture de vidéos.
-                </video>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeVideoModal();
+// ===== SYSTÈME DE RÉORGANISATION PAR DRAG & DROP =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Activer le mode de réorganisation
+    const enableReorderBtn = document.getElementById('enableReorder');
+    if (enableReorderBtn) {
+        enableReorderBtn.addEventListener('click', function() {
+            console.log('Bouton Réorganiser cliqué'); // Debug
+            
+            if (selectionMode) {
+                alert('Veuillez d\'abord quitter le mode de sélection multiple avant d\'activer la réorganisation');
+                return;
             }
+            
+            // SAUVEGARDER L'ORDRE ORIGINAL AVANT D'ENTRER EN MODE RÉORGANISATION
+            saveOriginalOrder();
+            
+            reorderMode = true;
+            
+            // Ajouter la classe reorder-mode au conteneur principal
+            const mediaGallery = document.getElementById('mediaGallery');
+            mediaGallery.classList.add('reorder-mode');
+            
+            // Afficher/masquer les éléments appropriés
+            $('#category-actions').addClass('hidden');
+            $('#reorder-actions').removeClass('hidden');
+            $('#reorderInstructions').removeClass('hidden');
+            $('.image-checkbox').addClass('hidden');
+            $('.drag-handle').removeClass('hidden');
+            $('#media-filters').addClass('hidden');
+            
+            // Désactiver les autres boutons
+            $('button[onclick="toggleSelectionMode()"]').prop('disabled', true);
+            
+            // FORCER LA DÉSACTIVATION DE TOUS LES OVERLAYS
+            $('.image-container').each(function() {
+                const overlay = $(this).find('.bg-black');
+                const actions = $(this).find('.image-actions');
+                const links = $(this).find('a');
+                const buttons = $(this).find('button').not('.drag-handle button');
+                
+                // Désactiver complètement l'overlay
+                overlay.css({
+                    'pointer-events': 'none',
+                    'display': 'none',
+                    'opacity': '0'
+                });
+                
+                // Désactiver les actions
+                actions.css({
+                    'pointer-events': 'none',
+                    'display': 'none',
+                    'visibility': 'hidden'
+                });
+                
+                // Désactiver tous les liens et boutons
+                links.css('pointer-events', 'none');
+                buttons.css('pointer-events', 'none');
+            });
+            
+            // Initialiser Sortable.js sur le conteneur des médias - IMAGES SEULEMENT
+            if (mediaGallery) {
+                sortableInstance = Sortable.create(mediaGallery, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    // Exclure les vidéos du drag & drop
+                    filter: '.media-type-video',
+                    preventOnFilter: false,
+                    onStart: function(evt) {
+                        // Vérifier que c'est bien une image
+                        if (evt.item.classList.contains('media-type-video')) {
+                            return false;
+                        }
+                        evt.item.style.opacity = '0.8';
+                        evt.item.style.zIndex = '999';
+                    },
+                    onEnd: function(evt) {
+                        evt.item.style.opacity = '1';
+                        evt.item.style.zIndex = 'auto';
+                    },
+                    // Ne permettre le déplacement que des images
+                    onMove: function(evt) {
+                        return !evt.related.classList.contains('media-type-video');
+                    }
+                });
+            }
+            
+            console.log('Mode réorganisation activé - Overlay complètement désactivé');
+        });
+    }
+
+    // Annuler la réorganisation
+    const cancelReorderBtn = document.getElementById('cancelReorder');
+    if (cancelReorderBtn) {
+        cancelReorderBtn.addEventListener('click', function() {
+            console.log('Bouton Annuler cliqué - Restauration de l\'ordre original'); // Debug
+            
+            // RESTAURER L'ORDRE ORIGINAL AVANT DE SORTIR DU MODE
+            restoreOriginalOrder();
+            
+            // Puis sortir du mode réorganisation
+            exitReorderMode();
+        });
+    }
+
+    // Enregistrer l'ordre
+    const saveOrderBtn = document.getElementById('saveOrder');
+    if (saveOrderBtn) {
+        saveOrderBtn.addEventListener('click', function() {
+            console.log('Bouton Enregistrer cliqué'); // Debug
+            
+            const mediaItems = document.querySelectorAll('.media-item');
+            const imageOrder = [];
+            
+            // Récupérer uniquement les images dans l'ordre actuel
+            mediaItems.forEach(item => {
+                if (item.getAttribute('data-type') === 'image') {
+                    const imageName = item.getAttribute('data-image');
+                    if (imageName) {
+                        imageOrder.push(imageName);
+                    }
+                }
+            });
+            
+            if (imageOrder.length === 0) {
+                alert('Aucune image à réorganiser');
+                return;
+            }
+            
+            console.log('Ordre des images à sauvegarder:', imageOrder);
+            
+            // Désactiver le bouton et afficher le loader
+            const saveBtn = document.getElementById('saveOrder');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sauvegarde...';
+            
+            // Envoyer la requête AJAX
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: {
+                    reorder: 'true',
+                    imageOrder: imageOrder
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Afficher le message de succès
+                        $('#ajax-messages').html(`
+                            <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-green-700">${response.message}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // Réactiver le bouton immédiatement
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalText;
+                        
+                        // Sortir du mode réorganisation après un délai
+                        setTimeout(function() {
+                            exitReorderMode();
+                        }, 2000);
+                        
+                    } else {
+                        // Afficher le message d'erreur
+                        $('#ajax-messages').html(`
+                            <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700">${response.message}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // Réactiver le bouton
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalText;
+                    }
+                    
+                    // Faire défiler vers le message
+                    $('html, body').animate({
+                        scrollTop: $('#ajax-messages').offset().top - 100
+                    }, 500);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erreur AJAX:', {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+                    
+                    let errorMessage = 'Erreur lors de la sauvegarde de l\'ordre.';
+                    
+                    if (xhr.status === 0) {
+                        errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion.';
+                    } else if (xhr.status >= 500) {
+                        errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
+                    } else if (xhr.responseText) {
+                        errorMessage = 'Erreur: ' + xhr.responseText.substring(0, 100) + '...';
+                    }
+                    
+                    $('#ajax-messages').html(`
+                        <div class="p-4 border-l-4 border-red-400 bg-red-50 rounded-md">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">${errorMessage}</p>
+                                    <details class="mt-2">
+                                        <summary class="cursor-pointer text-xs text-red-600">Détails techniques</summary>
+                                        <pre class="text-xs mt-1 bg-red-100 p-2 rounded">${xhr.responseText || 'Aucune réponse du serveur'}</pre>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // Réactiver le bouton
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }
+            });
         });
     }
     
-    const video = document.getElementById('modalVideo');
-    const source = video.querySelector('source');
-    
-    source.src = videoPath;
-    const extension = videoPath.split('.').pop().toLowerCase();
-    
-    let mimeType = 'video/mp4';
-    switch(extension) {
-        case 'mp4': mimeType = 'video/mp4'; break;
-        case 'webm': mimeType = 'video/webm'; break;
-        case 'mov': mimeType = 'video/quicktime'; break;
-        case 'avi': mimeType = 'video/x-msvideo'; break;
-        case 'wmv': mimeType = 'video/x-ms-wmv'; break;
-        case 'flv': mimeType = 'video/x-flv'; break;
-        case 'mkv': mimeType = 'video/x-matroska'; break;
-    }
-    source.type = mimeType;
-    
-    video.load();
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    
-    video.addEventListener('loadeddata', function() {
-        video.play().catch(e => console.log('Autoplay bloqué:', e));
-    }, { once: true });
-}
-
-function closeVideoModal() {
-    const modal = document.getElementById('videoModal');
-    const video = document.getElementById('modalVideo');
-    
-    if (video) {
-        video.pause();
-        video.currentTime = 0;
-    }
-    if (modal) {
-        modal.style.display = 'none';
-    }
-    document.body.style.overflow = 'auto';
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeVideoModal();
-    }
+    console.log('Événements de réorganisation attachés avec succès');
 });
+
+// Fonction pour sauvegarder l'ordre original des éléments
+function saveOriginalOrder() {
+    originalOrder = [];
+    const mediaItems = document.querySelectorAll('.media-item');
+    
+    mediaItems.forEach(item => {
+        originalOrder.push({
+            element: item.cloneNode(true), // Clone complet de l'élément
+            dataImage: item.getAttribute('data-image'),
+            dataType: item.getAttribute('data-type')
+        });
+    });
+    
+    console.log('Ordre original sauvegardé:', originalOrder.length, 'éléments');
+}
+
+// Fonction pour restaurer l'ordre original
+function restoreOriginalOrder() {
+    if (originalOrder.length === 0) {
+        console.log('Aucun ordre original à restaurer');
+        return;
+    }
+    
+    const mediaGallery = document.getElementById('mediaGallery');
+    if (!mediaGallery) {
+        console.log('Conteneur mediaGallery non trouvé');
+        return;
+    }
+    
+    console.log('Restauration de l\'ordre original avec', originalOrder.length, 'éléments');
+    
+    // Vider le conteneur
+    mediaGallery.innerHTML = '';
+    
+    // Restaurer les éléments dans leur ordre original
+    originalOrder.forEach(item => {
+        const restoredElement = item.element.cloneNode(true);
+        mediaGallery.appendChild(restoredElement);
+    });
+    
+    // Réattacher les événements après la restauration
+    reattachEvents();
+    
+    console.log('Ordre original restauré avec succès');
+}
+
+// Fonction pour réattacher les événements après restauration
+function reattachEvents() {
+    // Réattacher les événements de modal vidéo
+    $('button[onclick^="openVideoModal"]').each(function() {
+        const onclick = $(this).attr('onclick');
+        if (onclick) {
+            $(this).off('click').on('click', function() {
+                eval(onclick);
+            });
+        }
+    });
+    
+    // Réattacher les événements de sélection
+    $('.image-select').off('change').on('change', function() {
+        updateSelectionCount();
+    });
+    
+    console.log('Événements réattachés après restauration');
+}
+
+function exitReorderMode() {
+    reorderMode = false;
+    
+    // Enlever la classe reorder-mode
+    const mediaGallery = document.getElementById('mediaGallery');
+    if (mediaGallery) {
+        mediaGallery.classList.remove('reorder-mode');
+    }
+    
+    // Détruire l'instance Sortable
+    if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+    }
+    
+    // RÉACTIVER TOUS LES OVERLAYS ET BOUTONS
+    $('.image-container').each(function() {
+        const overlay = $(this).find('.bg-black');
+        const actions = $(this).find('.image-actions');
+        const links = $(this).find('a');
+        const buttons = $(this).find('button');
+        
+        // Réactiver l'overlay
+        overlay.css({
+            'pointer-events': '',
+            'display': '',
+            'opacity': ''
+        });
+        
+        // Réactiver les actions
+        actions.css({
+            'pointer-events': '',
+            'display': '',
+            'visibility': ''
+        });
+        
+        // Réactiver tous les liens et boutons
+        links.css('pointer-events', '');
+        buttons.css('pointer-events', '');
+    });
+    
+    // Remettre l'interface normale
+    $('#category-actions').removeClass('hidden');
+    $('#reorder-actions').addClass('hidden');
+    $('#reorderInstructions').addClass('hidden');
+    $('.drag-handle').addClass('hidden');
+    $('#media-filters').removeClass('hidden');
+    
+    // Réactiver les autres boutons
+    $('button[onclick="toggleSelectionMode()"]').prop('disabled', false);
+    
+    // Vider la sauvegarde de l'ordre original
+    originalOrder = [];
+    
+    console.log('Mode réorganisation désactivé - Overlay réactivé - Ordre original vidé');
+}
 </script>
 
 <style>
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #e5e7eb;
+    border: 2px dashed #9ca3af;
+}
+
+.sortable-chosen {
+    transform: rotate(2deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+}
+
+.sortable-drag {
+    opacity: 0.8;
+    transform: rotate(5deg);
+}
+
+/* Styles pour le mode sélection */
 .image-card.selection-mode {
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+}
+
+.image-card.selection-mode:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #3b82f6;
 }
 
 .image-card.selected {
-    border: 2px solid #3b82f6;
-    background-color: #eff6ff;
-    transform: scale(0.98);
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    background-color: #eff6ff !important;
 }
 
-@media (max-width: 640px) {
-    .grid-cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+/* Styles pour le mode réorganisation - COMPLÈTEMENT DÉSACTIVER L'OVERLAY */
+.reorder-mode .image-container .group:hover .bg-black,
+.reorder-mode .image-container .bg-black {
+    background-color: transparent !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    display: none !important;
 }
 
-@media (min-width: 640px) and (max-width: 768px) {
-    .sm\:grid-cols-3 {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+.reorder-mode .image-actions {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+.reorder-mode .image-container {
+    cursor: move !important;
+}
+
+.reorder-mode .image-container:hover {
+    cursor: move !important;
+}
+
+/* Forcer la désactivation de tous les liens et boutons d'action en mode réorganisation */
+.reorder-mode .image-container a,
+.reorder-mode .image-container button:not(.drag-handle button) {
+    pointer-events: none !important;
+    display: none !important;
+}
+
+/* Style pour les poignées de drag */
+.drag-handle {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: 1px solid #1e40af;
+    margin-bottom: 2px;
+    user-select: none;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.drag-handle:hover {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Filtres de média */
+.media-filter-btn.active {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border-color: #2563eb !important;
+}
+
+/* Animation pour les éléments filtrés */
+.image-container {
+    transition: all 0.3s ease;
+}
+
+.image-container[style*="display: none"] {
+    opacity: 0;
+    transform: scale(0.8);
 }
 </style>

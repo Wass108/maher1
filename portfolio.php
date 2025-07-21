@@ -38,6 +38,12 @@ foreach ($categories as $category) {
     $categoryImgPath = $portfolioImgDir . $category . "/";
     if (is_dir($categoryImgPath)) {
         $images = glob($categoryImgPath . "*.{jpg,jpeg,png,gif,PNG}", GLOB_BRACE);
+        
+        // Trier les images par ordre numérique naturel pour respecter l'ordre de l'administration
+        usort($images, function($a, $b) {
+            return strnatcmp(basename($a), basename($b));
+        });
+        
         foreach ($images as $image) {
             $portfolioItems[] = [
                 'path' => str_replace(' ', '%20', $image),
@@ -52,6 +58,12 @@ foreach ($categories as $category) {
     $categoryVideoPath = $portfolioVideoDir . $category . "/";
     if (is_dir($categoryVideoPath)) {
         $videos = glob($categoryVideoPath . "*.{mp4,avi,mov,wmv,flv,webm,mkv}", GLOB_BRACE);
+        
+        // Trier les vidéos par ordre numérique naturel aussi
+        usort($videos, function($a, $b) {
+            return strnatcmp(basename($a), basename($b));
+        });
+        
         foreach ($videos as $video) {
             $portfolioItems[] = [
                 'path' => str_replace(' ', '%20', $video),

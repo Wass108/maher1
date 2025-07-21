@@ -378,8 +378,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 throw new Exception("Impossible de créer le dossier temporaire");
             }
             
-            // Récupérer les images existantes
-            $existingImages = glob($projectDir . "*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+            // Forcer la mise à jour du cache avant de lire les fichiers
+            clearstatcache();
+            
+            // Récupérer les images existantes avec une vérification plus robuste
+            $existingImages = [];
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            
+            // Méthode 1: Utiliser glob()
+            $globImages = glob($projectDir . "*.{jpg,jpeg,png,gif,webp}", GLOB_BRACE);
+            if ($globImages) {
+                $existingImages = $globImages;
+            } else {
+                // Méthode 2: Utiliser readdir() comme fallback
+                if (is_dir($projectDir)) {
+                    $handle = opendir($projectDir);
+                    while (false !== ($file = readdir($handle))) {
+                        if ($file != '.' && $file != '..') {
+                            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                            if (in_array($extension, $imageExtensions)) {
+                                $existingImages[] = $projectDir . $file;
+                            }
+                        }
+                    }
+                    closedir($handle);
+                }
+            }
+            
             $imageOrder = $_POST['imageOrder'];
             
             // Créer un mapping des images existantes par nom de fichier
@@ -389,44 +414,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 $imageFiles[$imageName] = $imagePath;
             }
             
-            // Vérifier que toutes les images demandées existent
+            // Filtrer l'ordre des images pour ne garder que celles qui existent réellement
+            $validImageOrder = [];
+            $missingImages = [];
+            
             foreach ($imageOrder as $imageName) {
-                if (!isset($imageFiles[$imageName])) {
-                    throw new Exception("Image non trouvée: " . $imageName);
+                if (isset($imageFiles[$imageName]) && file_exists($imageFiles[$imageName])) {
+                    $validImageOrder[] = $imageName;
+                } else {
+                    $missingImages[] = $imageName;
+                }
+            }
+            
+            // Si aucune image valide, on arrête
+            if (empty($validImageOrder)) {
+                throw new Exception("Aucune image valide trouvée pour la réorganisation");
+            }
+            
+            // Log des images manquantes pour le debug
+            if (!empty($missingImages)) {
+                error_log("Images manquantes lors de la réorganisation: " . implode(', ', $missingImages));
+            }
+            
+            // Ajouter les images existantes qui ne sont pas dans l'ordre spécifié
+            foreach ($imageFiles as $imageName => $imagePath) {
+                if (!in_array($imageName, $validImageOrder) && file_exists($imagePath)) {
+                    $validImageOrder[] = $imageName;
                 }
             }
             
             // Copier les images dans le dossier temporaire avec les nouveaux noms
             $counter = 1;
             $tempMapping = [];
-            foreach ($imageOrder as $imageName) {
-                $originalPath = $imageFiles[$imageName];
-                $extension = pathinfo($originalPath, PATHINFO_EXTENSION);
-                $newName = sprintf("%02d.%s", $counter, $extension);
-                $tempPath = $tempDir . $newName;
-                
-                if (!copy($originalPath, $tempPath)) {
-                    throw new Exception("Impossible de copier l'image: " . $imageName);
+            $reorganizedCount = 0;
+            
+            foreach ($validImageOrder as $imageName) {
+                if (isset($imageFiles[$imageName]) && file_exists($imageFiles[$imageName])) {
+                    $originalPath = $imageFiles[$imageName];
+                    $extension = pathinfo($originalPath, PATHINFO_EXTENSION);
+                    $newName = sprintf("%02d.%s", $counter, $extension);
+                    $tempPath = $tempDir . $newName;
+                    
+                    if (copy($originalPath, $tempPath)) {
+                        $tempMapping[$newName] = $tempPath;
+                        $reorganizedCount++;
+                        $counter++;
+                    } else {
+                        error_log("Impossible de copier l'image: " . $imageName);
+                    }
                 }
-                
-                $tempMapping[$newName] = $tempPath;
-                $counter++;
             }
             
-            // Supprimer tous les fichiers originaux
-            foreach ($existingImages as $image) {
-                if (file_exists($image)) {
-                    if (!unlink($image)) {
-                        throw new Exception("Impossible de supprimer l'image originale: " . basename($image));
+            if ($reorganizedCount === 0) {
+                throw new Exception("Aucune image n'a pu être copiée");
+            }
+            
+            // Supprimer tous les fichiers originaux qui ont été copiés avec succès
+            foreach ($validImageOrder as $imageName) {
+                if (isset($imageFiles[$imageName]) && file_exists($imageFiles[$imageName])) {
+                    if (!unlink($imageFiles[$imageName])) {
+                        error_log("Impossible de supprimer l'image originale: " . $imageName);
                     }
                 }
             }
             
             // Déplacer les images du dossier temporaire vers le dossier principal
+            $movedCount = 0;
             foreach ($tempMapping as $newName => $tempPath) {
                 $finalPath = $projectDir . $newName;
-                if (!rename($tempPath, $finalPath)) {
-                    throw new Exception("Impossible de déplacer l'image: " . $newName);
+                if (rename($tempPath, $finalPath)) {
+                    $movedCount++;
+                } else {
+                    error_log("Impossible de déplacer l'image: " . $newName);
                 }
             }
             
@@ -435,11 +494,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 rmdir($tempDir);
             }
             
+            // Préparer le message de succès
+            $successMessage = "Images réorganisées avec succès ($movedCount images)";
+            if (!empty($missingImages)) {
+                $successMessage .= ". Images non trouvées: " . implode(', ', $missingImages);
+            }
+            
             // Réponse AJAX de succès - AVEC NETTOYAGE COMPLET
             ob_clean(); // S'assurer qu'aucun contenu n'a été envoyé
             header('Content-Type: application/json; charset=utf-8');
             header('Cache-Control: no-cache, must-revalidate');
-            echo json_encode(['success' => true, 'message' => 'Images réorganisées avec succès'], JSON_UNESCAPED_UNICODE);
+            echo json_encode([
+                'success' => true, 
+                'message' => $successMessage,
+                'reorganized' => $movedCount,
+                'missing' => $missingImages
+            ], JSON_UNESCAPED_UNICODE);
             exit;
             
         } catch (Exception $e) {
@@ -453,6 +523,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reorder']) && $_POST[
                 }
                 rmdir($tempDir);
             }
+            
+            // Log de l'erreur pour le debug
+            error_log("Erreur lors de la réorganisation: " . $e->getMessage());
             
             ob_clean(); // Nettoyer avant d'envoyer la réponse d'erreur
             header('Content-Type: application/json; charset=utf-8');
