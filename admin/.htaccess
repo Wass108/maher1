@@ -1,0 +1,7 @@
+DirectoryIndex dashboard.php
+
+RewriteEngine On
+RewriteBase /maher1/admin/
+
+RewriteCond %{REQUEST_URI} /admin/?$
+RewriteRule ^$ dashboard.php [L,R=302]
